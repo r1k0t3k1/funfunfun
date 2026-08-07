@@ -88,11 +88,11 @@ impl ListenerUsecase {
             .map_err(|e| UsecaseError::Unexpected(e.into()))
     }
 
-    pub async fn checkin_agent_to_listener(&self, agent: Agent) -> Result<(), UsecaseError> {
-        self.listener_manager
-            .lock()
-            .await
-    }
+    //pub async fn checkin_agent_to_listener(&self, agent: Agent) -> Result<(), UsecaseError> {
+    //    self.listener_manager
+    //        .lock()
+    //        .await
+    //}
 }
 
 fn spawn_worker<F, Fut, C>(mut rx: tokio::sync::mpsc::UnboundedReceiver<(String, String)>, ctx: C, f: F)

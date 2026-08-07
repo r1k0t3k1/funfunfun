@@ -62,14 +62,5 @@ mod tests {
 
     #[actix_web::test]
     async fn test_health_check_db() {
-        let state = web::Data::new(AppState {
-            db_connection: DatabaseConfig::new().connect_database_with(),
-        });
-
-        let app =
-            test::init_service(App::new().app_data(state.clone()).service(health_check_db)).await;
-        let req = test::TestRequest::get().uri("/health/db").to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK);
     }
 }

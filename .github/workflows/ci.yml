@@ -28,6 +28,12 @@ jobs:
 
       - name: build
         run: cargo make build
+
+      - name: generate openapi.json
+        run: cargo test export_openapi_json
+
+      - name: check diff 
+        run: git diff --exit-code openapi.json
 #      - name: Tests compile
 #        run: cargo make test-ci --no-run --locked
 
