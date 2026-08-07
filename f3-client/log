@@ -1,0 +1,238 @@
+     Running BeforeDevCommand (`npm run dev`)
+     Running DevCommand (`cargo  run --no-default-features --color always --`)
+        Info Watching /home/rikoteki/Desktop/Repository/funfunfun/f3-client/src-tauri for changes...
+[1m[92m   Compiling[0m gdk-sys v0.18.2
+[1m[92m   Compiling[0m glib v0.18.5
+[1m[92m   Compiling[0m gdk-pixbuf-sys v0.18.0
+[1m[92m   Compiling[0m soup3-sys v0.5.0
+[1m[92m   Compiling[0m javascriptcore-rs-sys v1.1.1
+[1m[92m   Compiling[0m gdkx11-sys v0.18.2
+[1m[92m   Compiling[0m tauri-build v2.6.3
+[1m[91merror[0m: failed to run custom build command for `gdk-sys v0.18.2`
+
+Caused by:
+  process didn't exit successfully: `/home/rikoteki/Desktop/Repository/funfunfun/f3-client/src-tauri/target/debug/build/gdk-sys-51ae951caba91e0f/build-script-build` (exit status: 1)
+  --- stdout
+  cargo:rerun-if-env-changed=GDK_3.0_NO_PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_PATH
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_LIBDIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_SYSROOT_DIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+
+  --- stderr
+
+  pkg-config exited with status code 1
+  > PKG_CONFIG_PATH=/nix/store/5iga06c6w0pb6p1srgkxzjvrzgf93j1y-openssl-3.6.3-dev/lib/pkgconfig:/nix/store/1wm786v5ia3iprwv7bs04sbisd2gakhg-dbus-1.16.2-dev/lib/pkgconfig:/nix/store/593rzz2xs5i67biyv2hz898j6v5ylms0-glib-2.88.1-dev/lib/pkgconfig:/nix/store/ydgdz8pf2in3rlb5agwkgr76vfrdf2s5-zlib-1.3.2-dev/share/pkgconfig:/nix/store/6hyghr8bpj6h9bavs8fp7v5w3qlc42i6-libffi-3.7.0-dev/lib/pkgconfig:/nix/store/kkx7d3mplnqb1p78xaabvbnmsci4k2fb-gdk-pixbuf-2.44.6-dev/lib/pkgconfig:/nix/store/9f05f6vx28rxqhj57b981l9xmh3c421h-libtiff-4.7.1-dev/lib/pkgconfig:/nix/store/bl7vidf1qb4c8f34gs92s1da73as5b8z-libjpeg-turbo-3.1.4.1-dev/lib/pkgconfig:/nix/store/vm13cagj8s0704qqj4crvca3hsm86jah-zstd-1.5.7-dev/lib/pkgconfig:/nix/store/cffm4gnmi0303pnnsfjmhqk55z987w8a-libdeflate-1.25/lib/pkgconfig:/nix/store/2ym1262372n15a3vwb0j89r3bs4qw7dg-xz-5.8.3-dev/lib/pkgconfig:/nix/store/i7vqdxgjwybyb1h790yrl37q485sj5kb-libwebp-1.6.0/lib/pkgconfig:/nix/store/652hh9lfhy54q45w2nhd6zlzc7z9ks0n-lerc-4.1.1-dev/lib/pkgconfig:/nix/store/c1zcwag5x9i24jj9nxv3dfn35ng33yn3-libpng-apng-1.6.58-dev/lib/pkgconfig:/nix/store/i54snrx1bkzvzyil5ybzpgp6brviqbvd-pango-1.57.1-dev/lib/pkgconfig:/nix/store/3h6xnv0614bd6q4x57sjlrxy0hhshkkg-cairo-1.18.4-dev/lib/pkgconfig:/nix/store/lp5dqcflpn6wnwnxcrv39yjsn45pwpys-fontconfig-2.18.1-dev/lib/pkgconfig:/nix/store/qmajm5vxiwziaw4d34d5mwiy39d65wj4-freetype-2.14.3-dev/lib/pkgconfig:/nix/store/g9233lb7899rdmaw3gr6jnc35g8jxhmi-bzip2-1.0.8-dev/lib/pkgconfig:/nix/store/xkjdypjdb61dqq0z79fdqd1mjhw3k3vi-brotli-1.2.0-dev/lib/pkgconfig:/nix/store/g0nnb14m078jyiwlhfmvj2jckz0cgmgx-expat-2.8.2-dev/lib/pkgconfig:/nix/store/456p4q4ka95c0i2i5hd5hfbinn1568s0-pixman-0.46.4/lib/pkgconfig:/nix/store/jhmp55f7pj4p0hw24d6c7zygsvgsv56a-libxext-1.3.7-dev/lib/pkgconfig:/nix/store/cnf77zjffsdyncsm7q2kgcsfi21hvbd8-xorgproto-2025.1/share/pkgconfig:/nix/store/fws1421cr8h1y4gb2wf66mr1c84005iv-libxau-1.0.12-dev/lib/pkgconfig:/nix/store/b6wld0pjv5mqkdmp0xmjd5k830alq4w2-libxrender-0.9.12-dev/lib/pkgconfig:/nix/store/f7kgxfrak6yngbzj7gkzx7v7mq59fcml-libx11-1.8.13-dev/lib/pkgconfig:/nix/store/7w2z7kbvifnwg57divcmygmysqwa59s2-libxcb-1.17.0-dev/lib/pkgconfig:/nix/store/ydrx7d5vkrzsa4jcjxihskxi1ydpwh3l-harfbuzz-13.2.1-dev/lib/pkgconfig:/nix/store/cq57xrw40gsph6x04y4y7jjbbns47hw4-graphite2-1.3.15-dev/lib/pkgconfig:/nix/store/z6b3vkjx6q5dr7yymalsxsld2z80vg2b-libxft-2.3.9-dev/lib/pkgconfig:/nix/store/ccbqdmp0jv3xayv93asc0w9dybv63xbi-at-spi2-core-2.60.4-dev/lib/pkgconfig PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags gdk-3.0 'gdk-3.0 >= 3.22'
+
+  pkg-config output:
+    Package gdk-3.0 was not found in the pkg-config search path.
+    Perhaps you should add the directory containing `gdk-3.0.pc'
+    to the PKG_CONFIG_PATH environment variable
+    No package 'gdk-3.0' found
+    Package gdk-3.0 was not found in the pkg-config search path.
+    Perhaps you should add the directory containing `gdk-3.0.pc'
+    to the PKG_CONFIG_PATH environment variable
+    No package 'gdk-3.0' found
+
+  The system library `gdk-3.0` required by crate `gdk-sys` was not found.
+  The file `gdk-3.0.pc` needs to be installed and the PKG_CONFIG_PATH environment variable must contain its parent directory.
+  PKG_CONFIG_PATH contains the following:
+      - /nix/store/5iga06c6w0pb6p1srgkxzjvrzgf93j1y-openssl-3.6.3-dev/lib/pkgconfig
+      - /nix/store/1wm786v5ia3iprwv7bs04sbisd2gakhg-dbus-1.16.2-dev/lib/pkgconfig
+      - /nix/store/593rzz2xs5i67biyv2hz898j6v5ylms0-glib-2.88.1-dev/lib/pkgconfig
+      - /nix/store/ydgdz8pf2in3rlb5agwkgr76vfrdf2s5-zlib-1.3.2-dev/share/pkgconfig
+      - /nix/store/6hyghr8bpj6h9bavs8fp7v5w3qlc42i6-libffi-3.7.0-dev/lib/pkgconfig
+      - /nix/store/kkx7d3mplnqb1p78xaabvbnmsci4k2fb-gdk-pixbuf-2.44.6-dev/lib/pkgconfig
+      - /nix/store/9f05f6vx28rxqhj57b981l9xmh3c421h-libtiff-4.7.1-dev/lib/pkgconfig
+      - /nix/store/bl7vidf1qb4c8f34gs92s1da73as5b8z-libjpeg-turbo-3.1.4.1-dev/lib/pkgconfig
+      - /nix/store/vm13cagj8s0704qqj4crvca3hsm86jah-zstd-1.5.7-dev/lib/pkgconfig
+      - /nix/store/cffm4gnmi0303pnnsfjmhqk55z987w8a-libdeflate-1.25/lib/pkgconfig
+      - /nix/store/2ym1262372n15a3vwb0j89r3bs4qw7dg-xz-5.8.3-dev/lib/pkgconfig
+      - /nix/store/i7vqdxgjwybyb1h790yrl37q485sj5kb-libwebp-1.6.0/lib/pkgconfig
+      - /nix/store/652hh9lfhy54q45w2nhd6zlzc7z9ks0n-lerc-4.1.1-dev/lib/pkgconfig
+      - /nix/store/c1zcwag5x9i24jj9nxv3dfn35ng33yn3-libpng-apng-1.6.58-dev/lib/pkgconfig
+      - /nix/store/i54snrx1bkzvzyil5ybzpgp6brviqbvd-pango-1.57.1-dev/lib/pkgconfig
+      - /nix/store/3h6xnv0614bd6q4x57sjlrxy0hhshkkg-cairo-1.18.4-dev/lib/pkgconfig
+      - /nix/store/lp5dqcflpn6wnwnxcrv39yjsn45pwpys-fontconfig-2.18.1-dev/lib/pkgconfig
+      - /nix/store/qmajm5vxiwziaw4d34d5mwiy39d65wj4-freetype-2.14.3-dev/lib/pkgconfig
+      - /nix/store/g9233lb7899rdmaw3gr6jnc35g8jxhmi-bzip2-1.0.8-dev/lib/pkgconfig
+      - /nix/store/xkjdypjdb61dqq0z79fdqd1mjhw3k3vi-brotli-1.2.0-dev/lib/pkgconfig
+      - /nix/store/g0nnb14m078jyiwlhfmvj2jckz0cgmgx-expat-2.8.2-dev/lib/pkgconfig
+      - /nix/store/456p4q4ka95c0i2i5hd5hfbinn1568s0-pixman-0.46.4/lib/pkgconfig
+      - /nix/store/jhmp55f7pj4p0hw24d6c7zygsvgsv56a-libxext-1.3.7-dev/lib/pkgconfig
+      - /nix/store/cnf77zjffsdyncsm7q2kgcsfi21hvbd8-xorgproto-2025.1/share/pkgconfig
+      - /nix/store/fws1421cr8h1y4gb2wf66mr1c84005iv-libxau-1.0.12-dev/lib/pkgconfig
+      - /nix/store/b6wld0pjv5mqkdmp0xmjd5k830alq4w2-libxrender-0.9.12-dev/lib/pkgconfig
+      - /nix/store/f7kgxfrak6yngbzj7gkzx7v7mq59fcml-libx11-1.8.13-dev/lib/pkgconfig
+      - /nix/store/7w2z7kbvifnwg57divcmygmysqwa59s2-libxcb-1.17.0-dev/lib/pkgconfig
+      - /nix/store/ydrx7d5vkrzsa4jcjxihskxi1ydpwh3l-harfbuzz-13.2.1-dev/lib/pkgconfig
+      - /nix/store/cq57xrw40gsph6x04y4y7jjbbns47hw4-graphite2-1.3.15-dev/lib/pkgconfig
+      - /nix/store/z6b3vkjx6q5dr7yymalsxsld2z80vg2b-libxft-2.3.9-dev/lib/pkgconfig
+      - /nix/store/ccbqdmp0jv3xayv93asc0w9dybv63xbi-at-spi2-core-2.60.4-dev/lib/pkgconfig
+
+  HINT: you may need to install a package such as gdk-3.0, gdk-3.0-dev or gdk-3.0-devel.
+
+[1m[33mwarning[0m: build failed, waiting for other jobs to finish...
+[1m[96m    Building[0m [=================>       ] 353/487: glib, gdkx11-sys(build.rs),…[K[1m[33mwarning[0m: javascriptcore-rs-sys@1.1.1: 
+[1m[91merror[0m: failed to run custom build command for `javascriptcore-rs-sys v1.1.1`
+
+Caused by:
+  process didn't exit successfully: `/home/rikoteki/Desktop/Repository/funfunfun/f3-client/src-tauri/target/debug/build/javascriptcore-rs-sys-0f4ee2f3f6802120/build-script-build` (exit status: 1)
+  --- stdout
+  cargo:rerun-if-env-changed=JAVASCRIPTCOREGTK_4.1_NO_PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_PATH
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_LIBDIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_SYSROOT_DIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+  cargo:warning=
+  pkg-config exited with status code 1
+  > PKG_CONFIG_PATH=/nix/store/5iga06c6w0pb6p1srgkxzjvrzgf93j1y-openssl-3.6.3-dev/lib/pkgconfig:/nix/store/1wm786v5ia3iprwv7bs04sbisd2gakhg-dbus-1.16.2-dev/lib/pkgconfig:/nix/store/593rzz2xs5i67biyv2hz898j6v5ylms0-glib-2.88.1-dev/lib/pkgconfig:/nix/store/ydgdz8pf2in3rlb5agwkgr76vfrdf2s5-zlib-1.3.2-dev/share/pkgconfig:/nix/store/6hyghr8bpj6h9bavs8fp7v5w3qlc42i6-libffi-3.7.0-dev/lib/pkgconfig:/nix/store/kkx7d3mplnqb1p78xaabvbnmsci4k2fb-gdk-pixbuf-2.44.6-dev/lib/pkgconfig:/nix/store/9f05f6vx28rxqhj57b981l9xmh3c421h-libtiff-4.7.1-dev/lib/pkgconfig:/nix/store/bl7vidf1qb4c8f34gs92s1da73as5b8z-libjpeg-turbo-3.1.4.1-dev/lib/pkgconfig:/nix/store/vm13cagj8s0704qqj4crvca3hsm86jah-zstd-1.5.7-dev/lib/pkgconfig:/nix/store/cffm4gnmi0303pnnsfjmhqk55z987w8a-libdeflate-1.25/lib/pkgconfig:/nix/store/2ym1262372n15a3vwb0j89r3bs4qw7dg-xz-5.8.3-dev/lib/pkgconfig:/nix/store/i7vqdxgjwybyb1h790yrl37q485sj5kb-libwebp-1.6.0/lib/pkgconfig:/nix/store/652hh9lfhy54q45w2nhd6zlzc7z9ks0n-lerc-4.1.1-dev/lib/pkgconfig:/nix/store/c1zcwag5x9i24jj9nxv3dfn35ng33yn3-libpng-apng-1.6.58-dev/lib/pkgconfig:/nix/store/i54snrx1bkzvzyil5ybzpgp6brviqbvd-pango-1.57.1-dev/lib/pkgconfig:/nix/store/3h6xnv0614bd6q4x57sjlrxy0hhshkkg-cairo-1.18.4-dev/lib/pkgconfig:/nix/store/lp5dqcflpn6wnwnxcrv39yjsn45pwpys-fontconfig-2.18.1-dev/lib/pkgconfig:/nix/store/qmajm5vxiwziaw4d34d5mwiy39d65wj4-freetype-2.14.3-dev/lib/pkgconfig:/nix/store/g9233lb7899rdmaw3gr6jnc35g8jxhmi-bzip2-1.0.8-dev/lib/pkgconfig:/nix/store/xkjdypjdb61dqq0z79fdqd1mjhw3k3vi-brotli-1.2.0-dev/lib/pkgconfig:/nix/store/g0nnb14m078jyiwlhfmvj2jckz0cgmgx-expat-2.8.2-dev/lib/pkgconfig:/nix/store/456p4q4ka95c0i2i5hd5hfbinn1568s0-pixman-0.46.4/lib/pkgconfig:/nix/store/jhmp55f7pj4p0hw24d6c7zygsvgsv56a-libxext-1.3.7-dev/lib/pkgconfig:/nix/store/cnf77zjffsdyncsm7q2kgcsfi21hvbd8-xorgproto-2025.1/share/pkgconfig:/nix/store/fws1421cr8h1y4gb2wf66mr1c84005iv-libxau-1.0.12-dev/lib/pkgconfig:/nix/store/b6wld0pjv5mqkdmp0xmjd5k830alq4w2-libxrender-0.9.12-dev/lib/pkgconfig:/nix/store/f7kgxfrak6yngbzj7gkzx7v7mq59fcml-libx11-1.8.13-dev/lib/pkgconfig:/nix/store/7w2z7kbvifnwg57divcmygmysqwa59s2-libxcb-1.17.0-dev/lib/pkgconfig:/nix/store/ydrx7d5vkrzsa4jcjxihskxi1ydpwh3l-harfbuzz-13.2.1-dev/lib/pkgconfig:/nix/store/cq57xrw40gsph6x04y4y7jjbbns47hw4-graphite2-1.3.15-dev/lib/pkgconfig:/nix/store/z6b3vkjx6q5dr7yymalsxsld2z80vg2b-libxft-2.3.9-dev/lib/pkgconfig:/nix/store/ccbqdmp0jv3xayv93asc0w9dybv63xbi-at-spi2-core-2.60.4-dev/lib/pkgconfig PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags javascriptcoregtk-4.1 'javascriptcoregtk-4.1 >= 2.38'
+
+  pkg-config output:
+    Package javascriptcoregtk-4.1 was not found in the pkg-config search path.
+    Perhaps you should add the directory containing `javascriptcoregtk-4.1.pc'
+    to the PKG_CONFIG_PATH environment variable
+    No package 'javascriptcoregtk-4.1' found
+    Package javascriptcoregtk-4.1 was not found in the pkg-config search path.
+    Perhaps you should add the directory containing `javascriptcoregtk-4.1.pc'
+    to the PKG_CONFIG_PATH environment variable
+    No package 'javascriptcoregtk-4.1' found
+
+  The system library `javascriptcoregtk-4.1` required by crate `javascriptcore-rs-sys` was not found.
+  The file `javascriptcoregtk-4.1.pc` needs to be installed and the PKG_CONFIG_PATH environment variable must contain its parent directory.
+  PKG_CONFIG_PATH contains the following:
+      - /nix/store/5iga06c6w0pb6p1srgkxzjvrzgf93j1y-openssl-3.6.3-dev/lib/pkgconfig
+      - /nix/store/1wm786v5ia3iprwv7bs04sbisd2gakhg-dbus-1.16.2-dev/lib/pkgconfig
+      - /nix/store/593rzz2xs5i67biyv2hz898j6v5ylms0-glib-2.88.1-dev/lib/pkgconfig
+      - /nix/store/ydgdz8pf2in3rlb5agwkgr76vfrdf2s5-zlib-1.3.2-dev/share/pkgconfig
+      - /nix/store/6hyghr8bpj6h9bavs8fp7v5w3qlc42i6-libffi-3.7.0-dev/lib/pkgconfig
+      - /nix/store/kkx7d3mplnqb1p78xaabvbnmsci4k2fb-gdk-pixbuf-2.44.6-dev/lib/pkgconfig
+      - /nix/store/9f05f6vx28rxqhj57b981l9xmh3c421h-libtiff-4.7.1-dev/lib/pkgconfig
+      - /nix/store/bl7vidf1qb4c8f34gs92s1da73as5b8z-libjpeg-turbo-3.1.4.1-dev/lib/pkgconfig
+      - /nix/store/vm13cagj8s0704qqj4crvca3hsm86jah-zstd-1.5.7-dev/lib/pkgconfig
+      - /nix/store/cffm4gnmi0303pnnsfjmhqk55z987w8a-libdeflate-1.25/lib/pkgconfig
+      - /nix/store/2ym1262372n15a3vwb0j89r3bs4qw7dg-xz-5.8.3-dev/lib/pkgconfig
+      - /nix/store/i7vqdxgjwybyb1h790yrl37q485sj5kb-libwebp-1.6.0/lib/pkgconfig
+      - /nix/store/652hh9lfhy54q45w2nhd6zlzc7z9ks0n-lerc-4.1.1-dev/lib/pkgconfig
+      - /nix/store/c1zcwag5x9i24jj9nxv3dfn35ng33yn3-libpng-apng-1.6.58-dev/lib/pkgconfig
+      - /nix/store/i54snrx1bkzvzyil5ybzpgp6brviqbvd-pango-1.57.1-dev/lib/pkgconfig
+      - /nix/store/3h6xnv0614bd6q4x57sjlrxy0hhshkkg-cairo-1.18.4-dev/lib/pkgconfig
+      - /nix/store/lp5dqcflpn6wnwnxcrv39yjsn45pwpys-fontconfig-2.18.1-dev/lib/pkgconfig
+      - /nix/store/qmajm5vxiwziaw4d34d5mwiy39d65wj4-freetype-2.14.3-dev/lib/pkgconfig
+      - /nix/store/g9233lb7899rdmaw3gr6jnc35g8jxhmi-bzip2-1.0.8-dev/lib/pkgconfig
+      - /nix/store/xkjdypjdb61dqq0z79fdqd1mjhw3k3vi-brotli-1.2.0-dev/lib/pkgconfig
+      - /nix/store/g0nnb14m078jyiwlhfmvj2jckz0cgmgx-expat-2.8.2-dev/lib/pkgconfig
+      - /nix/store/456p4q4ka95c0i2i5hd5hfbinn1568s0-pixman-0.46.4/lib/pkgconfig
+      - /nix/store/jhmp55f7pj4p0hw24d6c7zygsvgsv56a-libxext-1.3.7-dev/lib/pkgconfig
+      - /nix/store/cnf77zjffsdyncsm7q2kgcsfi21hvbd8-xorgproto-2025.1/share/pkgconfig
+      - /nix/store/fws1421cr8h1y4gb2wf66mr1c84005iv-libxau-1.0.12-dev/lib/pkgconfig
+      - /nix/store/b6wld0pjv5mqkdmp0xmjd5k830alq4w2-libxrender-0.9.12-dev/lib/pkgconfig
+      - /nix/store/f7kgxfrak6yngbzj7gkzx7v7mq59fcml-libx11-1.8.13-dev/lib/pkgconfig
+      - /nix/store/7w2z7kbvifnwg57divcmygmysqwa59s2-libxcb-1.17.0-dev/lib/pkgconfig
+      - /nix/store/ydrx7d5vkrzsa4jcjxihskxi1ydpwh3l-harfbuzz-13.2.1-dev/lib/pkgconfig
+      - /nix/store/cq57xrw40gsph6x04y4y7jjbbns47hw4-graphite2-1.3.15-dev/lib/pkgconfig
+      - /nix/store/z6b3vkjx6q5dr7yymalsxsld2z80vg2b-libxft-2.3.9-dev/lib/pkgconfig
+      - /nix/store/ccbqdmp0jv3xayv93asc0w9dybv63xbi-at-spi2-core-2.60.4-dev/lib/pkgconfig
+
+  HINT: you may need to install a package such as javascriptcoregtk-4.1, javascriptcoregtk-4.1-dev or javascriptcoregtk-4.1-devel.
+
+[1m[96m    Building[0m [=================>       ] 354/487: glib, gdkx11-sys(build.rs),…[K[1m[33mwarning[0m: soup3-sys@0.5.0: 
+[1m[91merror[0m: failed to run custom build command for `soup3-sys v0.5.0`
+
+Caused by:
+  process didn't exit successfully: `/home/rikoteki/Desktop/Repository/funfunfun/f3-client/src-tauri/target/debug/build/soup3-sys-1e8d94c4b9a63d4a/build-script-build` (exit status: 1)
+  --- stdout
+  cargo:rerun-if-env-changed=LIBSOUP_3.0_NO_PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_PATH
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_LIBDIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_SYSROOT_DIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+  cargo:warning=
+  pkg-config exited with status code 1
+  > PKG_CONFIG_PATH=/nix/store/5iga06c6w0pb6p1srgkxzjvrzgf93j1y-openssl-3.6.3-dev/lib/pkgconfig:/nix/store/1wm786v5ia3iprwv7bs04sbisd2gakhg-dbus-1.16.2-dev/lib/pkgconfig:/nix/store/593rzz2xs5i67biyv2hz898j6v5ylms0-glib-2.88.1-dev/lib/pkgconfig:/nix/store/ydgdz8pf2in3rlb5agwkgr76vfrdf2s5-zlib-1.3.2-dev/share/pkgconfig:/nix/store/6hyghr8bpj6h9bavs8fp7v5w3qlc42i6-libffi-3.7.0-dev/lib/pkgconfig:/nix/store/kkx7d3mplnqb1p78xaabvbnmsci4k2fb-gdk-pixbuf-2.44.6-dev/lib/pkgconfig:/nix/store/9f05f6vx28rxqhj57b981l9xmh3c421h-libtiff-4.7.1-dev/lib/pkgconfig:/nix/store/bl7vidf1qb4c8f34gs92s1da73as5b8z-libjpeg-turbo-3.1.4.1-dev/lib/pkgconfig:/nix/store/vm13cagj8s0704qqj4crvca3hsm86jah-zstd-1.5.7-dev/lib/pkgconfig:/nix/store/cffm4gnmi0303pnnsfjmhqk55z987w8a-libdeflate-1.25/lib/pkgconfig:/nix/store/2ym1262372n15a3vwb0j89r3bs4qw7dg-xz-5.8.3-dev/lib/pkgconfig:/nix/store/i7vqdxgjwybyb1h790yrl37q485sj5kb-libwebp-1.6.0/lib/pkgconfig:/nix/store/652hh9lfhy54q45w2nhd6zlzc7z9ks0n-lerc-4.1.1-dev/lib/pkgconfig:/nix/store/c1zcwag5x9i24jj9nxv3dfn35ng33yn3-libpng-apng-1.6.58-dev/lib/pkgconfig:/nix/store/i54snrx1bkzvzyil5ybzpgp6brviqbvd-pango-1.57.1-dev/lib/pkgconfig:/nix/store/3h6xnv0614bd6q4x57sjlrxy0hhshkkg-cairo-1.18.4-dev/lib/pkgconfig:/nix/store/lp5dqcflpn6wnwnxcrv39yjsn45pwpys-fontconfig-2.18.1-dev/lib/pkgconfig:/nix/store/qmajm5vxiwziaw4d34d5mwiy39d65wj4-freetype-2.14.3-dev/lib/pkgconfig:/nix/store/g9233lb7899rdmaw3gr6jnc35g8jxhmi-bzip2-1.0.8-dev/lib/pkgconfig:/nix/store/xkjdypjdb61dqq0z79fdqd1mjhw3k3vi-brotli-1.2.0-dev/lib/pkgconfig:/nix/store/g0nnb14m078jyiwlhfmvj2jckz0cgmgx-expat-2.8.2-dev/lib/pkgconfig:/nix/store/456p4q4ka95c0i2i5hd5hfbinn1568s0-pixman-0.46.4/lib/pkgconfig:/nix/store/jhmp55f7pj4p0hw24d6c7zygsvgsv56a-libxext-1.3.7-dev/lib/pkgconfig:/nix/store/cnf77zjffsdyncsm7q2kgcsfi21hvbd8-xorgproto-2025.1/share/pkgconfig:/nix/store/fws1421cr8h1y4gb2wf66mr1c84005iv-libxau-1.0.12-dev/lib/pkgconfig:/nix/store/b6wld0pjv5mqkdmp0xmjd5k830alq4w2-libxrender-0.9.12-dev/lib/pkgconfig:/nix/store/f7kgxfrak6yngbzj7gkzx7v7mq59fcml-libx11-1.8.13-dev/lib/pkgconfig:/nix/store/7w2z7kbvifnwg57divcmygmysqwa59s2-libxcb-1.17.0-dev/lib/pkgconfig:/nix/store/ydrx7d5vkrzsa4jcjxihskxi1ydpwh3l-harfbuzz-13.2.1-dev/lib/pkgconfig:/nix/store/cq57xrw40gsph6x04y4y7jjbbns47hw4-graphite2-1.3.15-dev/lib/pkgconfig:/nix/store/z6b3vkjx6q5dr7yymalsxsld2z80vg2b-libxft-2.3.9-dev/lib/pkgconfig:/nix/store/ccbqdmp0jv3xayv93asc0w9dybv63xbi-at-spi2-core-2.60.4-dev/lib/pkgconfig PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags libsoup-3.0 'libsoup-3.0 >= 3.0'
+
+  pkg-config output:
+    Package libsoup-3.0 was not found in the pkg-config search path.
+    Perhaps you should add the directory containing `libsoup-3.0.pc'
+    to the PKG_CONFIG_PATH environment variable
+    No package 'libsoup-3.0' found
+    Package libsoup-3.0 was not found in the pkg-config search path.
+    Perhaps you should add the directory containing `libsoup-3.0.pc'
+    to the PKG_CONFIG_PATH environment variable
+    No package 'libsoup-3.0' found
+
+  The system library `libsoup-3.0` required by crate `soup3-sys` was not found.
+  The file `libsoup-3.0.pc` needs to be installed and the PKG_CONFIG_PATH environment variable must contain its parent directory.
+  PKG_CONFIG_PATH contains the following:
+      - /nix/store/5iga06c6w0pb6p1srgkxzjvrzgf93j1y-openssl-3.6.3-dev/lib/pkgconfig
+      - /nix/store/1wm786v5ia3iprwv7bs04sbisd2gakhg-dbus-1.16.2-dev/lib/pkgconfig
+      - /nix/store/593rzz2xs5i67biyv2hz898j6v5ylms0-glib-2.88.1-dev/lib/pkgconfig
+      - /nix/store/ydgdz8pf2in3rlb5agwkgr76vfrdf2s5-zlib-1.3.2-dev/share/pkgconfig
+      - /nix/store/6hyghr8bpj6h9bavs8fp7v5w3qlc42i6-libffi-3.7.0-dev/lib/pkgconfig
+      - /nix/store/kkx7d3mplnqb1p78xaabvbnmsci4k2fb-gdk-pixbuf-2.44.6-dev/lib/pkgconfig
+      - /nix/store/9f05f6vx28rxqhj57b981l9xmh3c421h-libtiff-4.7.1-dev/lib/pkgconfig
+      - /nix/store/bl7vidf1qb4c8f34gs92s1da73as5b8z-libjpeg-turbo-3.1.4.1-dev/lib/pkgconfig
+      - /nix/store/vm13cagj8s0704qqj4crvca3hsm86jah-zstd-1.5.7-dev/lib/pkgconfig
+      - /nix/store/cffm4gnmi0303pnnsfjmhqk55z987w8a-libdeflate-1.25/lib/pkgconfig
+      - /nix/store/2ym1262372n15a3vwb0j89r3bs4qw7dg-xz-5.8.3-dev/lib/pkgconfig
+      - /nix/store/i7vqdxgjwybyb1h790yrl37q485sj5kb-libwebp-1.6.0/lib/pkgconfig
+      - /nix/store/652hh9lfhy54q45w2nhd6zlzc7z9ks0n-lerc-4.1.1-dev/lib/pkgconfig
+      - /nix/store/c1zcwag5x9i24jj9nxv3dfn35ng33yn3-libpng-apng-1.6.58-dev/lib/pkgconfig
+      - /nix/store/i54snrx1bkzvzyil5ybzpgp6brviqbvd-pango-1.57.1-dev/lib/pkgconfig
+      - /nix/store/3h6xnv0614bd6q4x57sjlrxy0hhshkkg-cairo-1.18.4-dev/lib/pkgconfig
+      - /nix/store/lp5dqcflpn6wnwnxcrv39yjsn45pwpys-fontconfig-2.18.1-dev/lib/pkgconfig
+      - /nix/store/qmajm5vxiwziaw4d34d5mwiy39d65wj4-freetype-2.14.3-dev/lib/pkgconfig
+      - /nix/store/g9233lb7899rdmaw3gr6jnc35g8jxhmi-bzip2-1.0.8-dev/lib/pkgconfig
+      - /nix/store/xkjdypjdb61dqq0z79fdqd1mjhw3k3vi-brotli-1.2.0-dev/lib/pkgconfig
+      - /nix/store/g0nnb14m078jyiwlhfmvj2jckz0cgmgx-expat-2.8.2-dev/lib/pkgconfig
+      - /nix/store/456p4q4ka95c0i2i5hd5hfbinn1568s0-pixman-0.46.4/lib/pkgconfig
+      - /nix/store/jhmp55f7pj4p0hw24d6c7zygsvgsv56a-libxext-1.3.7-dev/lib/pkgconfig
+      - /nix/store/cnf77zjffsdyncsm7q2kgcsfi21hvbd8-xorgproto-2025.1/share/pkgconfig
+      - /nix/store/fws1421cr8h1y4gb2wf66mr1c84005iv-libxau-1.0.12-dev/lib/pkgconfig
+      - /nix/store/b6wld0pjv5mqkdmp0xmjd5k830alq4w2-libxrender-0.9.12-dev/lib/pkgconfig
+      - /nix/store/f7kgxfrak6yngbzj7gkzx7v7mq59fcml-libx11-1.8.13-dev/lib/pkgconfig
+      - /nix/store/7w2z7kbvifnwg57divcmygmysqwa59s2-libxcb-1.17.0-dev/lib/pkgconfig
+      - /nix/store/ydrx7d5vkrzsa4jcjxihskxi1ydpwh3l-harfbuzz-13.2.1-dev/lib/pkgconfig
+      - /nix/store/cq57xrw40gsph6x04y4y7jjbbns47hw4-graphite2-1.3.15-dev/lib/pkgconfig
+      - /nix/store/z6b3vkjx6q5dr7yymalsxsld2z80vg2b-libxft-2.3.9-dev/lib/pkgconfig
+      - /nix/store/ccbqdmp0jv3xayv93asc0w9dybv63xbi-at-spi2-core-2.60.4-dev/lib/pkgconfig
+
+  HINT: you may need to install a package such as libsoup-3.0, libsoup-3.0-dev or libsoup-3.0-devel.
+
+[1m[96m    Building[0m [=================>       ] 355/487: glib, gdkx11-sys(build.rs),…[1m[96m    Building[0m [=================>       ] 356/487: glib, gdkx11-sys(build.rs),…[1m[96m    Building[0m [=================>       ] 357/487: glib, tauri-build           [1m[96m    Building[0m [=================>       ] 358/487: glib                        [K

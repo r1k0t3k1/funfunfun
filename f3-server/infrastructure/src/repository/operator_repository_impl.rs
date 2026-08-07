@@ -1,0 +1,98 @@
+use sqlx::PgPool;
+
+use crate::entity::operator_entity::OperatorEntity;
+use crate::entity::role_entity::RoleEntity;
+use domain::{
+    error::DomainError::{self, InvalidCredentials},
+    model::operator_model::Operator,
+    operator_repositry::OperatorRepository,
+};
+
+#[derive(Debug, Clone)]
+pub struct OperatorRepositoryImpl {
+    connection: PgPool,
+}
+
+impl OperatorRepositoryImpl {
+    pub fn new(connection: PgPool) -> Self {
+        Self { connection }
+    }
+}
+
+#[async_trait::async_trait]
+impl OperatorRepository for OperatorRepositoryImpl {
+    async fn find_by_id(&self, operator_id: String) -> Result<Option<Operator>, DomainError> {
+        sqlx::query_as!(
+            OperatorEntity,
+            r#"SELECT 
+                  operator_id,
+                  name,
+                  description,
+                  created_at,
+                  updated_at,
+                  role AS "role: RoleEntity"
+              FROM operators
+              WHERE operator_id = $1
+            "#,
+            operator_id.into()
+        )
+        .fetch_optional(&self.connection)
+        .await
+        .map(|ooe| ooe.map(|oe| oe.into()))
+        .map_err(|e| DomainError::Infrastructure(e.into()))
+    }
+
+    async fn find_by_credential(
+        &self,
+        operator_id: String,
+        password: String,
+    ) -> Result<Option<Operator>, DomainError> {
+        let mut tx = self
+            .connection
+            .begin()
+            .await
+            .map_err(|e| DomainError::Infrastructure(e.into()))?;
+
+        let operator = sqlx::query_as!(
+            OperatorEntity,
+            r#"SELECT 
+                  operator_id,
+                  name,
+                  description,
+                  role AS "role: RoleEntity",
+                  created_at,
+                  updated_at
+              FROM operators
+              WHERE operator_id = $1
+            "#,
+            operator_id.into(),
+        )
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(|e| DomainError::Infrastructure(e.into()))?
+        .ok_or_else(|| InvalidCredentials)?;
+
+        let is_password_match: bool = sqlx::query_scalar!(
+            r#"SELECT
+                   (password_hash = crypt($1, password_hash)) AS password_match 
+               FROM operators
+               WHERE operator_id = $2;
+            "#,
+            password.into(),
+            operator.operator_id,
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| DomainError::Infrastructure(e.into()))?
+        .unwrap_or(false);
+
+        tx.commit()
+            .await
+            .map_err(|e| DomainError::Infrastructure(e.into()))?;
+
+        match is_password_match {
+            true => Ok(Some(operator.into())),
+            false => Err(DomainError::InvalidCredentials),
+        }
+    }
+}

@@ -1,0 +1,30 @@
+# Rust / Cargo
+target/
+**/target/
+.direnv
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# フロントエンド (Node.js)
+node_modules/
+dist/
+dist-ssr/
+.output/
+
+# ログ・環境変数
+*.log
+.env
+.env.local
+.env.*.local
+
+# エディタ・OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
