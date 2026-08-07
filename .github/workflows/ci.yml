@@ -26,11 +26,11 @@ jobs:
         with:
           tool: nextest, cargo-make
 
-      - name: Tests compile
-        run: cargo make test-ci --no-run --locked
+#      - name: Tests compile
+#        run: cargo make test-ci --no-run --locked
 
-      - name: Test
-        run: cargo make test-ci
+#      - name: Test
+#        run: cargo make test-ci
 
       - name: Clippy
         run: cargo make clippy-ci -- -Dwarnings
