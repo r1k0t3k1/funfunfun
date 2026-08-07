@@ -26,6 +26,8 @@ jobs:
         with:
           tool: nextest, cargo-make
 
+      - name: build
+        run: cargo make build
 #      - name: Tests compile
 #        run: cargo make test-ci --no-run --locked
 
