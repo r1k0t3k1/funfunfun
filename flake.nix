@@ -13,8 +13,19 @@
           pkg-config
           rustc
           cargo
+          nodejs_latest
+          playwright-driver.browsers
         ];
+        
+        shellHook = ''
+	  export PATH=~/.cargo/bin:$PATH
+          export CHROMIUM_BIN=${pkgs.chromium}/bin/chromium
+	  export PLAYWRIGHT_BROWSERS_PATH=${pkgs.playwright-driver.browsers}
+	  export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true;
+        '';
+
         buildInputs = with pkgs; [
+          chromium
           dbus
           openssl
           glib
