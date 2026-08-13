@@ -1,3 +1,5 @@
+use rand::Rng;
+
 pub type ListenerId = String;
 pub type AgentId = String;
 
@@ -14,14 +16,29 @@ pub enum Tlv {
 }
 
 pub struct CheckinRequest {
-    pub listener_id: ListenerId,
     pub agent_pubkey: [u8; 32],
 }
 
+#[derive(Debug)]
 pub struct CheckinResponse {
+    pub listener_pubkey: [u8; 32],
+}
+
+impl CheckinResponse {
+    pub fn new() -> Self {
+        let mut listener_pubkey = [0_u8; 32];
+        rand::rng().fill_bytes(&mut listener_pubkey);
+        Self { listener_pubkey }
+    }
+}
+
+pub struct CheckinCompleteRequest {
+    pub agent_info: String,
+}
+
+pub struct CheckinCompleteResponse {
     pub listener_id: ListenerId,
     pub agent_id: AgentId,
-    pub listner_pubkey: [u8; 32],
 }
 
 pub trait PacketCodec {

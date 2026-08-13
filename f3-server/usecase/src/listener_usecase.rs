@@ -4,7 +4,7 @@ use std::{
 };
 
 use domain::{
-    agent::AgentEvent, command::{CommandReceiver, CommandSender}, listener::ListenerManager
+    agent::AgentEvent, command::{CommandReceiver, CommandSender}, listener::ListenerManager, model::packet_model::CheckinResponse
 };
 use tokio::sync::Mutex;
 
@@ -107,8 +107,12 @@ async fn handle_request(agent_events: Vec<AgentEvent>, lu: ListenerUsecase) {
     log::info!("[+] Request received. event count {}", agent_events.len());
     for evt in agent_events {
         match evt {
-            AgentEvent::Checkin { agent_public_key } => log::info!("[+] Checkin public key: {agent_public_key:?}"),
-            AgentEvent::CheckinComplete { agent_info } => log::info!("[+] AgentInfo: {agent_info}"),
+            AgentEvent::Checkin { agent_public_key, response_sender } => {
+                log::info!("[+] Checkin public key: {agent_public_key:?}");
+                let res = CheckinResponse::new();
+                response_sender.send(res).unwrap();
+            },
+            AgentEvent::CheckinComplete { agent_info, response_sender } => log::info!("[+] AgentInfo: {agent_info}"),
         }
     }
     //lu.listener_manager.

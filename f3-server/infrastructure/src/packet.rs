@@ -139,7 +139,15 @@ pub struct CheckinRequest { // ここのみ平文
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CheckinResponse { // ここのみ平文
-    pub listner_pubkey: [u8; 32],
+    pub listener_pubkey: [u8; 32],
+}
+
+impl CheckinResponse {
+    fn new() -> Self {
+        let mut listener_pubkey = [0_u8; 32];
+        rand::rng().fill_bytes(&mut listener_pubkey);
+        Self { listener_pubkey } 
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
