@@ -14,6 +14,10 @@
           rustc
           cargo
         ];
+        shellHook = ''
+          export PATH=~/.cargo/bin:$PATH
+        '';
+
         buildInputs = with pkgs; [
           dbus
           openssl
