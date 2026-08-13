@@ -6,7 +6,7 @@ use tokio::sync::mpsc::UnboundedSender;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
-use crate::agent::Agent;
+use crate::agent::{Agent, AgentEvent};
 
 #[async_trait::async_trait]
 pub trait ListenerManager: Send + Sync {
@@ -14,7 +14,7 @@ pub trait ListenerManager: Send + Sync {
         &mut self,
         name: String,
         addr: SocketAddr,
-        notifier: UnboundedSender<(String, String)>,
+        notifier: UnboundedSender<Vec<AgentEvent>>,
     ) -> anyhow::Result<()>;
     async fn start_http(&mut self, listener_id: String) -> anyhow::Result<()>;
     async fn stop(&mut self, listener_id: String) -> anyhow::Result<()>;
@@ -43,7 +43,7 @@ pub struct ListenerInfo {
     pub name: String,
     pub addr: SocketAddr,
     pub handle: Option<ListenerHandle>,
-    pub notifier: UnboundedSender<(String, String)>,
+    pub notifier: UnboundedSender<Vec<AgentEvent>>,
     pub command_queue: Arc<Mutex<VecDeque<String>>>,
     pub agents: Vec<Agent>,
 }

@@ -4,7 +4,7 @@ use std::{
 };
 
 use domain::{
-    agent::Agent, command::{CommandReceiver, CommandSender}, listener::ListenerManager
+    agent::AgentEvent, command::{CommandReceiver, CommandSender}, listener::ListenerManager
 };
 use tokio::sync::Mutex;
 
@@ -52,7 +52,7 @@ impl ListenerUsecase {
         let addr = SocketAddr::new(IpAddr::V4(host), lport);
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         
-        spawn_worker(rx, self.clone(), handle_checkin_request);
+        spawn_worker(rx, self.clone(), handle_request);
 
         self.listener_manager
             .lock()
@@ -88,17 +88,12 @@ impl ListenerUsecase {
             .map_err(|e| UsecaseError::Unexpected(e.into()))
     }
 
-    //pub async fn checkin_agent_to_listener(&self, agent: Agent) -> Result<(), UsecaseError> {
-    //    self.listener_manager
-    //        .lock()
-    //        .await
-    //}
 }
 
-fn spawn_worker<F, Fut, C>(mut rx: tokio::sync::mpsc::UnboundedReceiver<(String, String)>, ctx: C, f: F)
+fn spawn_worker<F, Fut, C>(mut rx: tokio::sync::mpsc::UnboundedReceiver<Vec<AgentEvent>>, ctx: C, f: F)
 where
     C: Clone + Send + 'static,
-    F: Fn((String, String), C) -> Fut + Send + 'static,
+    F: Fn(Vec<AgentEvent>, C) -> Fut + Send + 'static,
     Fut: Future<Output = ()> + Send,
 {
     tokio::spawn(async move {
@@ -108,7 +103,13 @@ where
     });
 }
 
-async fn handle_checkin_request(checkin_info: (String, String), lu: ListenerUsecase) {
-    log::info!("[+] Checkin request received on listener id {}. shared secret is {}", checkin_info.0, checkin_info.1);
+async fn handle_request(agent_events: Vec<AgentEvent>, lu: ListenerUsecase) {
+    log::info!("[+] Request received. event count {}", agent_events.len());
+    for evt in agent_events {
+        match evt {
+            AgentEvent::Checkin { agent_public_key } => log::info!("[+] Checkin public key: {agent_public_key:?}"),
+            AgentEvent::CheckinComplete { agent_info } => log::info!("[+] AgentInfo: {agent_info}"),
+        }
+    }
     //lu.listener_manager.
 }

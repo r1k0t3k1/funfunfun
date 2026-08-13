@@ -6,7 +6,7 @@ use std::{
     sync::Arc,
 };
 
-use domain::listener::{ListenerHandle, ListenerInfo, ListenerManager};
+use domain::{agent::AgentEvent, listener::{ListenerHandle, ListenerInfo, ListenerManager}};
 use tokio::sync::{
     Mutex,
     mpsc::{self, UnboundedSender},
@@ -36,7 +36,7 @@ impl ListenerManager for ListenerManagerImpl {
         &mut self,
         name: String,
         addr: SocketAddr,
-        notifier: UnboundedSender<(String, String)>,
+        notifier: UnboundedSender<Vec<AgentEvent>>,
     ) -> anyhow::Result<()> {
         self.listeners.insert(
             Uuid::new_v4().to_string(),
