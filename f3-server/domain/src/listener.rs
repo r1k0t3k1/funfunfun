@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::{collections::HashMap, net::SocketAddr};
 use tokio::sync::Mutex;
 use tokio::sync::mpsc::UnboundedSender;
-use tokio::task::JoinHandle;
+use tokio::task::AbortHandle;
 use tokio_util::sync::CancellationToken;
 
 use crate::agent::{Agent, AgentEvent};
@@ -24,15 +24,15 @@ pub trait ListenerManager: Send + Sync {
 }
 
 pub struct ListenerHandle {
-    pub join_handle: JoinHandle<()>,
+    pub abort_handle: AbortHandle,
     pub token: CancellationToken,
     pub protocol: String,
 }
 
 impl ListenerHandle {
-    pub fn new(join_handle: JoinHandle<()>, token: CancellationToken, protocol: String) -> Self {
+    pub fn new(abort_handle: AbortHandle, token: CancellationToken, protocol: String) -> Self {
         Self {
-            join_handle,
+            abort_handle,
             token,
             protocol,
         }

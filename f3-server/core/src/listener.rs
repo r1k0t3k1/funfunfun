@@ -1,19 +1,15 @@
-use std::{any, collections::HashMap, net::SocketAddr, sync::mpsc};
+use std::{net::SocketAddr, sync::{Arc, mpsc}};
 
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
+#[derive(Clone)]
 struct ListenerHandle {
-    join_handle: JoinHandle<()>,
     token: CancellationToken,
     addr: SocketAddr,
     protocol: String,
+    response_sender: mpsc::Sender<ListenerMessage>,
 }
-
-//pub struct ListenerManager {
-//    handles: HashMap<String, ListenerHandle>,
-//    inbound_tx: mpsc::Sender<()>,
-//}
 
 #[async_trait::async_trait]
 pub trait ListenerManager {

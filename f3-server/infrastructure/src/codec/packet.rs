@@ -94,8 +94,8 @@ impl TryInto<AgentEvent> for Tlv {
 
     fn try_into(self) -> Result<AgentEvent, Self::Error> {
         match self {
-            Self::CheckinReq(v) => Ok(AgentEvent::Checkin { agent_public_key: v.agent_pubkey }),
-            Self::CheckinCompleteReq(v) => Ok(AgentEvent::CheckinComplete { agent_info: v.agent_info }),
+            Self::CheckinReq(v) => Ok(AgentEvent::Checkin { agent_public_key: v.agent_pubkey, response_sender: todo!() }),
+            Self::CheckinCompleteReq(v) => Ok(AgentEvent::CheckinComplete { agent_info: v.agent_info, response_sender: todo!() }),
             _ => Err(anyhow!("Cannot convert Tlv to Agent Event: {self:?}")),
         }
     }

@@ -72,7 +72,7 @@ impl ListenerManager for ListenerManagerImpl {
             }
         });
 
-        listener.handle = Some(ListenerHandle::new(handle, token, "HTTP".to_string()));
+        listener.handle = Some(ListenerHandle::new(handle.abort_handle(), token, "HTTP".to_string()));
         log::info!(
             "[+] HTTP listener {} started on {}",
             listener.name,
@@ -94,10 +94,10 @@ impl ListenerManager for ListenerManagerImpl {
 
         handle.token.cancel();
 
-        tokio::time::timeout(std::time::Duration::from_secs(10), handle.join_handle)
-            .await
-            .map_err(|_| anyhow::anyhow!("listener {listener_id} did not stop within 10s"))?
-            .map_err(|e| anyhow::anyhow!("listener task panicked: {e}"))?;
+        //tokio::time::timeout(std::time::Duration::from_secs(10), handle);
+            //.await
+            //.map_err(|_| anyhow::anyhow!("listener {listener_id} did not stop within 10s"))?
+            //.map_err(|e| anyhow::anyhow!("listener task panicked: {e}"))?;
 
         log::info!("[*] Listener {listener_id} stopped");
         Ok(())

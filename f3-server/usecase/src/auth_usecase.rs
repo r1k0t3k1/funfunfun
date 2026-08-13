@@ -3,8 +3,8 @@ use std::sync::Arc;
 use domain::{
     error::DomainError,
     model::{operator_model::Operator, session_model::Session},
-    operator_repositry::OperatorRepository,
-    session_repository::SessionRepository,
+    repository::operator_repository::OperatorRepository,
+    repository::session_repository::SessionRepository,
 };
 
 use crate::error::UsecaseError;

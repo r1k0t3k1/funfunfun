@@ -4,7 +4,7 @@ use std::{
 };
 
 use domain::{
-    agent::AgentEvent, command::{CommandReceiver, CommandSender}, listener::ListenerManager, model::packet_model::CheckinResponse
+    agent::AgentEvent, listener::ListenerManager, model::packet_model::CheckinResponse
 };
 use tokio::sync::Mutex;
 
@@ -12,20 +12,14 @@ use crate::error::UsecaseError;
 
 #[derive(Clone)]
 pub struct ListenerUsecase {
-    command_tx: Arc<dyn CommandSender>,
-    command_rx: Arc<dyn CommandReceiver>,
     listener_manager: Arc<Mutex<dyn ListenerManager>>,
 }
 
 impl ListenerUsecase {
     pub fn new(
-        command_tx: Arc<dyn CommandSender>,
-        command_rx: Arc<dyn CommandReceiver>,
         listener_manager: Arc<Mutex<dyn ListenerManager>>,
     ) -> Self {
         Self {
-            command_tx,
-            command_rx,
             listener_manager,
         }
     }

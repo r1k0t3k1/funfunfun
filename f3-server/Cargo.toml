@@ -4,7 +4,8 @@ members = [
     "domain",
     "usecase",
     "infrastructure",
-    "app",
+    "app", 
+    "core",
 ]
 default-members = ["app"]
 exclude = ["test-tools"]
@@ -48,6 +49,7 @@ rand = { version = "0.10" }
 domain = { path = "domain" }
 usecase = { path = "usecase" }
 infrastructure = { path = "infrastructure" }
+core = { path = "core" }
 
 [profile.release]
 lto = true

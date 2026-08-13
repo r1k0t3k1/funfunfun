@@ -1,5 +1,5 @@
 use domain::error::DomainError;
-use domain::session_repository::SessionRepository;
+use domain::repository::session_repository::SessionRepository;
 use sqlx::PgPool;
 use sqlx::postgres::types::PgHstore;
 
