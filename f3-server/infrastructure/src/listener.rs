@@ -6,7 +6,7 @@ use std::{
     sync::Arc,
 };
 
-use domain::{agent::AgentEvent, listener::{ListenerHandle, ListenerId, ListenerInfo, ListenerManager}};
+use domain::{agent::AgentEvent, listener::{Listener, ListenerId}};
 use tokio::sync::{
     Mutex,
     mpsc::{self, UnboundedSender},
@@ -16,7 +16,7 @@ use tokio_util::sync::CancellationToken;
 use crate::listener;
 
 pub struct ListenerManagerImpl {
-    listeners: HashMap<ListenerId, ListenerInfo>,
+    listeners: HashMap<ListenerId, Listener>,
     inbound_tx: mpsc::UnboundedSender<()>,
 }
 

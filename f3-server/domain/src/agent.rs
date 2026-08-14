@@ -1,8 +1,12 @@
-use crate::model::packet_model::{CheckinCompleteResponse, CheckinResponse};
+use uuid::Uuid;
+
+use crate::{listener::ListenerId, model::packet_model::{CheckinCompleteResponse, CheckinResponse}};
+
+pub type AgentId = Uuid;
 
 pub struct Agent {
-    pub agent_id: String,
-    pub listener_id: String,
+    pub agent_id: AgentId,
+    pub listener_id: ListenerId,
 }
 
 type AgentPublicKey = [u8; 32];
