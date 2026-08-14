@@ -1,10 +1,8 @@
-use anyhow::anyhow;
-use crypto::aead::{AeadDecryptor,AeadEncryptor};
-use domain::agent::AgentEvent;
-use rand::Rng;
+use crypto::aead::{AeadDecryptor, AeadEncryptor};
+use rand::{Rng, rand_core::UnwrapErr};
+use reqwest::{Client, Proxy};
 use serde::{Deserialize, Serialize};
-pub type ListenerId = String;
-pub type AgentId = String;
+use anyhow::anyhow;
 
 const MAGIC_NUMBER: u16 = 0xf3f3;
 const NONCE_LEN: usize = 12;
@@ -12,7 +10,7 @@ const LENGTH_LEN: usize = 8;
 const AAD_LEN: usize = NONCE_LEN + LENGTH_LEN;
 const TAG_LEN: usize = 16;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Packet {
     pub magic: u16,
     pub length: u64,
@@ -72,36 +70,7 @@ impl Packet {
     }
 }
 
-impl TryInto<Vec<AgentEvent>> for Packet {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> Result<Vec<AgentEvent>, Self::Error> {
-        match self.body {
-            Body::Encrypted { nonce: _, cipher_text: _, tag: _ } => Err(anyhow!("Packet is Encrypted")),
-            Body::Plain(tlvs) => {
-                let mut results = vec![];
-                for tlv in tlvs {
-                    results.push(tlv.try_into()?)
-                }
-                Ok(results)
-            }
-        } 
-    }
-}
-
-impl TryInto<AgentEvent> for Tlv {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> Result<AgentEvent, Self::Error> {
-        match self {
-            Self::CheckinReq(v) => Ok(AgentEvent::Checkin { agent_public_key: v.agent_pubkey, response_sender: todo!() }),
-            Self::CheckinCompleteReq(v) => Ok(AgentEvent::CheckinComplete { agent_info: v.agent_info, response_sender: todo!() }),
-            _ => Err(anyhow!("Cannot convert Tlv to Agent Event: {self:?}")),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Body {
     Plain(Vec<Tlv>),
     Encrypted {
@@ -139,15 +108,7 @@ pub struct CheckinRequest { // ここのみ平文
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CheckinResponse { // ここのみ平文
-    pub listener_pubkey: [u8; 32],
-}
-
-impl CheckinResponse {
-    fn new() -> Self {
-        let mut listener_pubkey = [0_u8; 32];
-        rand::rng().fill_bytes(&mut listener_pubkey);
-        Self { listener_pubkey } 
-    }
+    pub listner_pubkey: [u8; 32],
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -157,6 +118,31 @@ pub struct CheckinCompleteRequest {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CheckinCompleteResponse { // ↑が復号できればCheckin完了、サーバ側でAgent登録
-    pub listener_id: ListenerId,
-    pub agent_id: AgentId,
+    pub listener_id: String,
+    pub agent_id: String,
+}
+
+#[tokio::main]
+async fn main() -> Result<(), reqwest::Error> {
+    let mut tlvs = vec![];
+    let mut pubkey = [0_u8; 32];
+    rand::rng().fill_bytes(&mut pubkey);
+    tlvs.push(Tlv::CheckinReq(CheckinRequest { agent_pubkey: pubkey}));
+    let checkin_packet = Packet::new(tlvs); 
+
+    let bytes = serde_cbor::to_vec(&checkin_packet).unwrap();
+    let client = reqwest::Client::builder()
+        .proxy(Proxy::all("http://localhost:8080").unwrap())
+        .danger_accept_invalid_certs(true)
+        .build()?;
+    let res = client.post("http://localhost:9999/favicon.ico")
+        .body(bytes)
+        .header("Content-Type", "text/plain")
+        .send()
+        .await?;
+    let bytes = res.bytes().await?.to_vec();
+    
+    let checkin_res: Packet = serde_cbor::from_slice(&bytes).unwrap();
+    println!("{checkin_res:?}");
+    Ok(())
 }

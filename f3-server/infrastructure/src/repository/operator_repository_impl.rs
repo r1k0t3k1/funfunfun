@@ -5,7 +5,7 @@ use crate::entity::role_entity::RoleEntity;
 use domain::{
     error::DomainError::{self, InvalidCredentials},
     model::operator_model::Operator,
-    operator_repositry::OperatorRepository,
+    repository::operator_repository::OperatorRepository,
 };
 
 #[derive(Debug, Clone)]

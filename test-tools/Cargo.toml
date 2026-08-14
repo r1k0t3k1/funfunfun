@@ -1,0 +1,13 @@
+[package]
+name = "test-tools"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_cbor = { version = "0.10" }
+anyhow = { version = "1.0" }
+rand = { version = "0.10" }
+rust-crypto = { version = "0.2.36" }
+reqwest = { version = "0.13" }
+tokio = { version = "1", features = ["full"] }
