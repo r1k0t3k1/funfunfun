@@ -10,4 +10,5 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
+uuid = { workspace = true }
 rand = { workspace = true }

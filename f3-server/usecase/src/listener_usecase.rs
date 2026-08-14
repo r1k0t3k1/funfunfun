@@ -4,7 +4,7 @@ use std::{
 };
 
 use domain::{
-    agent::AgentEvent, listener::ListenerManager, model::packet_model::CheckinResponse
+    agent::AgentEvent, listener::{ListenerId, ListenerManager}, model::packet_model::CheckinResponse
 };
 use tokio::sync::Mutex;
 
@@ -24,7 +24,7 @@ impl ListenerUsecase {
         }
     }
 
-    pub async fn list_listeners(&self) -> Vec<(String, SocketAddr)> {
+    pub async fn list_listeners(&self) -> Vec<(ListenerId, SocketAddr)> {
         let listener_manager = self.listener_manager.lock().await;
         listener_manager
             .list()
@@ -55,7 +55,7 @@ impl ListenerUsecase {
             .map_err(|e| UsecaseError::Unexpected(e.into()))
     }
 
-    pub async fn start_listener(&self, listener_id: String) -> Result<(), UsecaseError> {
+    pub async fn start_listener(&self, listener_id: ListenerId) -> Result<(), UsecaseError> {
         self.listener_manager
             .lock()
             .await
@@ -64,7 +64,7 @@ impl ListenerUsecase {
             .map_err(|e| UsecaseError::Unexpected(e.into()))
     }
 
-    pub async fn stop_listener(&self, listener_id: String) -> Result<(), UsecaseError> {
+    pub async fn stop_listener(&self, listener_id: ListenerId) -> Result<(), UsecaseError> {
         self.listener_manager
             .lock()
             .await
@@ -73,7 +73,7 @@ impl ListenerUsecase {
             .map_err(|e| UsecaseError::Unexpected(e.into()))
     }
 
-    pub async fn remove_listener(&self, listener_id: String) -> Result<(), UsecaseError> {
+    pub async fn remove_listener(&self, listener_id: ListenerId) -> Result<(), UsecaseError> {
         self.listener_manager
             .lock()
             .await

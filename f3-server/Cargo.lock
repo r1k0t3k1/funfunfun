@@ -437,6 +437,7 @@ dependencies = [
  "usecase",
  "utoipa",
  "utoipa-swagger-ui",
+ "uuid",
 ]
 
 [[package]]
@@ -932,6 +933,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-util",
+ "uuid",
 ]
 
 [[package]]

@@ -6,18 +6,17 @@ use std::{
     sync::Arc,
 };
 
-use domain::{agent::AgentEvent, listener::{ListenerHandle, ListenerInfo, ListenerManager}};
+use domain::{agent::AgentEvent, listener::{ListenerHandle, ListenerId, ListenerInfo, ListenerManager}};
 use tokio::sync::{
     Mutex,
     mpsc::{self, UnboundedSender},
 };
 use tokio_util::sync::CancellationToken;
-use uuid::Uuid;
 
 use crate::listener;
 
 pub struct ListenerManagerImpl {
-    listeners: HashMap<String, ListenerInfo>,
+    listeners: HashMap<ListenerId, ListenerInfo>,
     inbound_tx: mpsc::UnboundedSender<()>,
 }
 
@@ -39,7 +38,7 @@ impl ListenerManager for ListenerManagerImpl {
         notifier: UnboundedSender<Vec<AgentEvent>>,
     ) -> anyhow::Result<()> {
         self.listeners.insert(
-            Uuid::new_v4().to_string(),
+            ListenerId::new_v4(),
             ListenerInfo {
                 name,
                 addr,
@@ -52,7 +51,7 @@ impl ListenerManager for ListenerManagerImpl {
         Ok(())
     }
 
-    async fn start_http(&mut self, listener_id: String) -> anyhow::Result<()> {
+    async fn start_http(&mut self, listener_id: ListenerId) -> anyhow::Result<()> {
         let listener = self
             .listeners
             .get_mut(&listener_id)
@@ -81,7 +80,7 @@ impl ListenerManager for ListenerManagerImpl {
         Ok(())
     }
 
-    async fn stop(&mut self, listener_id: String) -> anyhow::Result<()> {
+    async fn stop(&mut self, listener_id: ListenerId) -> anyhow::Result<()> {
         let listener = self
             .listeners
             .get_mut(&listener_id)
@@ -104,7 +103,7 @@ impl ListenerManager for ListenerManagerImpl {
     }
 
     async fn stop_all(&mut self) {
-        let listener_ids: Vec<String> = self.listeners.keys().cloned().collect();
+        let listener_ids: Vec<ListenerId> = self.listeners.keys().cloned().collect();
         for id in listener_ids {
             if let Err(e) = self.stop(id).await {
                 eprintln!("{e}");
@@ -112,7 +111,7 @@ impl ListenerManager for ListenerManagerImpl {
         }
     }
 
-    async fn remove_listener(&mut self, listener_id: String) -> anyhow::Result<()> {
+    async fn remove_listener(&mut self, listener_id: ListenerId) -> anyhow::Result<()> {
         let l = self
             .listeners
             .iter()
@@ -129,7 +128,7 @@ impl ListenerManager for ListenerManagerImpl {
         Ok(())
     }
 
-    fn list(&self) -> &HashMap<String, ListenerInfo> {
+    fn list(&self) -> &HashMap<ListenerId, ListenerInfo> {
         &self.listeners
     }
 }

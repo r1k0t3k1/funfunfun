@@ -24,7 +24,7 @@ pub async fn list_listeners(state: web::Data<AppState>) -> Result<HttpResponse, 
         .await
         .iter()
         .map(|l| ListListenerResponse {
-            name: l.0.clone(),
+            name: l.0.to_string(),
             addr: l.1.to_string(),
         })
         .collect::<Vec<ListListenerResponse>>();
@@ -68,9 +68,11 @@ pub async fn start_listener(
     state: web::Data<AppState>,
     req: web::Json<StartListenerRequest>,
 ) -> Result<HttpResponse, AppError> {
+    let listener_id = req.listener_id.parse::<uuid::Uuid>()
+        .map_err(|_| AppError::Validation("ListenerId".to_string()))?;
     state
         .listener_usecase
-        .start_listener(req.listener_id.clone())
+        .start_listener(listener_id)
         .await
         .map(|_| HttpResponse::Ok().finish())
         .map_err(|e| AppError::UsecaseError(e.into()))
@@ -88,9 +90,11 @@ pub async fn stop_listener(
     state: web::Data<AppState>,
     req: web::Json<StopListenerRequest>,
 ) -> Result<HttpResponse, AppError> {
+    let listener_id = req.listener_id.parse::<uuid::Uuid>()
+        .map_err(|_| AppError::Validation("ListenerId".to_string()))?;
     state
         .listener_usecase
-        .stop_listener(req.listener_id.clone())
+        .stop_listener(listener_id)
         .await
         .map(|_| HttpResponse::Ok().finish())
         .map_err(|e| AppError::UsecaseError(e.into()))
@@ -108,9 +112,11 @@ pub async fn remove_listener(
     state: web::Data<AppState>,
     req: web::Json<RemoveListenerRequest>,
 ) -> Result<HttpResponse, AppError> {
+    let listener_id = req.listener_id.parse::<uuid::Uuid>()
+        .map_err(|_| AppError::Validation("ListenerId".to_string()))?;
     state
         .listener_usecase
-        .remove_listener(req.listener_id.clone())
+        .remove_listener(listener_id)
         .await
         .map(|_| HttpResponse::Ok().finish())
         .map_err(|e| AppError::UsecaseError(e.into()))

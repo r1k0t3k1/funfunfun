@@ -5,8 +5,11 @@ use tokio::sync::Mutex;
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
+use uuid::Uuid;
 
 use crate::agent::{Agent, AgentEvent};
+
+pub type ListenerId = Uuid;
 
 #[async_trait::async_trait]
 pub trait ListenerManager: Send + Sync {
@@ -16,11 +19,11 @@ pub trait ListenerManager: Send + Sync {
         addr: SocketAddr,
         notifier: UnboundedSender<Vec<AgentEvent>>,
     ) -> anyhow::Result<()>;
-    async fn start_http(&mut self, listener_id: String) -> anyhow::Result<()>;
-    async fn stop(&mut self, listener_id: String) -> anyhow::Result<()>;
+    async fn start_http(&mut self, listener_id: ListenerId) -> anyhow::Result<()>;
+    async fn stop(&mut self, listener_id: ListenerId) -> anyhow::Result<()>;
     async fn stop_all(&mut self);
-    async fn remove_listener(&mut self, listener_id: String) -> anyhow::Result<()>;
-    fn list(&self) -> &HashMap<String, ListenerInfo>;
+    async fn remove_listener(&mut self, listener_id: ListenerId) -> anyhow::Result<()>;
+    fn list(&self) -> &HashMap<ListenerId, ListenerInfo>;
 }
 
 pub struct ListenerHandle {
