@@ -3,6 +3,8 @@ use std::{net::SocketAddr, sync::{Arc, mpsc}};
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
+use crate::message::listener_message::ListenerMessage;
+
 #[derive(Clone)]
 struct ListenerHandle {
     token: CancellationToken,

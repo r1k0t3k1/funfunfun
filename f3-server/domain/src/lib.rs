@@ -3,3 +3,4 @@ pub mod error;
 pub mod listener;
 pub mod model;
 pub mod repository;
+pub mod message;

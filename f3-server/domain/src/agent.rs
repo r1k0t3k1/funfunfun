@@ -1,5 +1,8 @@
 use crate::model::packet_model::{CheckinCompleteResponse, CheckinResponse};
 
+pub type AgentId = u128;
+pub type SessionId = u128;
+
 pub struct Agent {
     pub agent_id: String,
     pub listener_id: String,
