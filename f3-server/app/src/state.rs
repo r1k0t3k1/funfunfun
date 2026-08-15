@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use infrastructure::listener::ListenerManagerImpl;
+use infrastructure::c2_manager::C2ManagerImpl;
 use infrastructure::repository::operator_repository_impl::OperatorRepositoryImpl;
 use infrastructure::repository::session_repository_impl::SessionRepositoryImpl;
 use sqlx::PgPool;
@@ -18,8 +18,7 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(connection: PgPool) -> Self {
-        let (shutdown_tx, _) = tokio::sync::mpsc::unbounded_channel();
-        let listener_manager = Arc::new(Mutex::new(ListenerManagerImpl::new(shutdown_tx)));
+        let listener_manager = Arc::new(Mutex::new(C2ManagerImpl::new()));
 
         Self {
             db_connection: connection.clone(), // repository間でトランザクション貼りたいときように渡す

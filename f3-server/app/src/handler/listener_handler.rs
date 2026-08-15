@@ -24,8 +24,8 @@ pub async fn list_listeners(state: web::Data<AppState>) -> Result<HttpResponse, 
         .await
         .iter()
         .map(|l| ListListenerResponse {
-            name: l.0.to_string(),
-            addr: l.1.to_string(),
+            name: l.to_string(),
+            addr: l.to_string(),
         })
         .collect::<Vec<ListListenerResponse>>();
 

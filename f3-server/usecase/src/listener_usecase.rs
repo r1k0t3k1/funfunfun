@@ -1,10 +1,7 @@
-use std::{
-    net::{IpAddr, Ipv4Addr, SocketAddr},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use domain::{
-    agent::AgentEvent, listener::{ListenerId, ListenerManager}, model::packet_model::CheckinResponse
+    agent::AgentEvent, c2_manager::C2Manager, listener::{Listener, ListenerId}, model::packet_model::CheckinResponse
 };
 use tokio::sync::Mutex;
 
@@ -12,25 +9,21 @@ use crate::error::UsecaseError;
 
 #[derive(Clone)]
 pub struct ListenerUsecase {
-    listener_manager: Arc<Mutex<dyn ListenerManager>>,
+    c2_manager: Arc<Mutex<dyn C2Manager>>,
 }
 
 impl ListenerUsecase {
     pub fn new(
-        listener_manager: Arc<Mutex<dyn ListenerManager>>,
+        c2_manager: Arc<Mutex<dyn C2Manager>>,
     ) -> Self {
         Self {
-            listener_manager,
+            c2_manager,
         }
     }
 
-    pub async fn list_listeners(&self) -> Vec<(ListenerId, SocketAddr)> {
-        let listener_manager = self.listener_manager.lock().await;
-        listener_manager
-            .list()
-            .iter()
-            .map(|(n, l)| (n.clone(), l.addr))
-            .collect()
+    pub async fn list_listeners(&self) -> Vec<String> {
+        let c2_manager = self.c2_manager.lock().await;
+        c2_manager.list_listener().keys().map(|k| k.to_string()).collect()
     }
 
     pub async fn create_listener(
@@ -39,33 +32,21 @@ impl ListenerUsecase {
         lhost: String,
         lport: u16,
     ) -> Result<(), UsecaseError> {
-        let host = lhost
-            .parse::<Ipv4Addr>()
-            .map_err(|e| UsecaseError::Validation(format!("{}: {}", "lhost".to_string(), e)))?;
-
-        let addr = SocketAddr::new(IpAddr::V4(host), lport);
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        
-        spawn_worker(rx, self.clone(), handle_request);
-
-        self.listener_manager
-            .lock()
-            .await
-            .add_listener(listener_type, addr, tx)
+        self.c2_manager.lock().await.add_listener(Listener::new())
             .map_err(|e| UsecaseError::Unexpected(e.into()))
     }
 
     pub async fn start_listener(&self, listener_id: ListenerId) -> Result<(), UsecaseError> {
-        self.listener_manager
+        self.c2_manager
             .lock()
             .await
-            .start_http(listener_id)
+            .start(listener_id)
             .await
             .map_err(|e| UsecaseError::Unexpected(e.into()))
     }
 
     pub async fn stop_listener(&self, listener_id: ListenerId) -> Result<(), UsecaseError> {
-        self.listener_manager
+        self.c2_manager
             .lock()
             .await
             .stop(listener_id)
@@ -74,11 +55,10 @@ impl ListenerUsecase {
     }
 
     pub async fn remove_listener(&self, listener_id: ListenerId) -> Result<(), UsecaseError> {
-        self.listener_manager
+        self.c2_manager
             .lock()
             .await
             .remove_listener(listener_id)
-            .await
             .map_err(|e| UsecaseError::Unexpected(e.into()))
     }
 

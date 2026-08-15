@@ -929,6 +929,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "log",
  "rand 0.10.2",
  "thiserror",
  "tokio",

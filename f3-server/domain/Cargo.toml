@@ -7,6 +7,7 @@ edition = "2024"
 [dependencies]
 thiserror = { workspace = true }
 anyhow = { workspace = true }
+log = { workspace = true }
 async-trait = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
