@@ -1,12 +1,11 @@
 use sqlx::PgPool;
 
+use application::domain::model::operator_model::Operator;
+use application::port::outbound::operator_repository::OperatorRepository;
+use application::port::outbound::error::RepositoryError;
+
 use crate::entity::operator_entity::OperatorEntity;
 use crate::entity::role_entity::RoleEntity;
-use domain::{
-    error::DomainError::{self, InvalidCredentials},
-    model::operator_model::Operator,
-    repository::operator_repository::OperatorRepository,
-};
 
 #[derive(Debug, Clone)]
 pub struct OperatorRepositoryImpl {
@@ -21,7 +20,7 @@ impl OperatorRepositoryImpl {
 
 #[async_trait::async_trait]
 impl OperatorRepository for OperatorRepositoryImpl {
-    async fn find_by_id(&self, operator_id: String) -> Result<Option<Operator>, DomainError> {
+    async fn find_by_id(&self, operator_id: String) -> Result<Option<Operator>, RepositoryError> {
         sqlx::query_as!(
             OperatorEntity,
             r#"SELECT 
@@ -39,19 +38,19 @@ impl OperatorRepository for OperatorRepositoryImpl {
         .fetch_optional(&self.connection)
         .await
         .map(|ooe| ooe.map(|oe| oe.into()))
-        .map_err(|e| DomainError::Infrastructure(e.into()))
+        .map_err(|e| RepositoryError::Infrastructure(e.into()))
     }
 
     async fn find_by_credential(
         &self,
         operator_id: String,
         password: String,
-    ) -> Result<Option<Operator>, DomainError> {
+    ) -> Result<Option<Operator>, RepositoryError> {
         let mut tx = self
             .connection
             .begin()
             .await
-            .map_err(|e| DomainError::Infrastructure(e.into()))?;
+            .map_err(|e| RepositoryError::Infrastructure(e.into()))?;
 
         let operator = sqlx::query_as!(
             OperatorEntity,
@@ -69,7 +68,7 @@ impl OperatorRepository for OperatorRepositoryImpl {
         )
         .fetch_optional(&mut *tx)
         .await
-        .map_err(|e| DomainError::Infrastructure(e.into()))?
+        .map_err(|e| RepositoryError::Infrastructure(e.into()))?
         .ok_or_else(|| InvalidCredentials)?;
 
         let is_password_match: bool = sqlx::query_scalar!(
@@ -83,16 +82,16 @@ impl OperatorRepository for OperatorRepositoryImpl {
         )
         .fetch_one(&mut *tx)
         .await
-        .map_err(|e| DomainError::Infrastructure(e.into()))?
+        .map_err(|e| RepositoryError::Infrastructure(e.into()))?
         .unwrap_or(false);
 
         tx.commit()
             .await
-            .map_err(|e| DomainError::Infrastructure(e.into()))?;
+            .map_err(|e| RepositoryError::Infrastructure(e.into()))?;
 
         match is_password_match {
             true => Ok(Some(operator.into())),
-            false => Err(DomainError::InvalidCredentials),
+            false => Err(RepositoryError::InvalidCredentials),
         }
     }
 }

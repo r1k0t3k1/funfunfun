@@ -1,10 +1,10 @@
-use domain::error::DomainError;
-use domain::repository::session_repository::SessionRepository;
 use sqlx::PgPool;
 use sqlx::postgres::types::PgHstore;
 
+use application::domain::model::session_model::Session;
+use application::port::outbound::session_repository::SessionRepository;
+
 use crate::entity::session_entity::SessionEntity;
-use domain::model::session_model::Session;
 
 #[derive(Debug, Clone)]
 pub struct SessionRepositoryImpl {
@@ -19,7 +19,7 @@ impl SessionRepositoryImpl {
 
 #[async_trait::async_trait]
 impl SessionRepository for SessionRepositoryImpl {
-    async fn find_by_id(&self, session_id: String) -> Result<Option<Session>, DomainError> {
+    async fn find_by_id(&self, session_id: String) -> Result<Option<Session>, RepositoryError> {
         sqlx::query_as!(
             SessionEntity,
             r#"SELECT 
@@ -35,10 +35,10 @@ impl SessionRepository for SessionRepositoryImpl {
         .fetch_optional(&self.connection)
         .await
         .map(|ose| ose.map(|se| se.into()))
-        .map_err(|e| DomainError::Infrastructure(e.into()))
+        .map_err(|e| RepositoryError::Infrastructure(e.into()))
     }
 
-    async fn insert(&self, operator_id: String) -> Result<Session, DomainError> {
+    async fn insert(&self, operator_id: String) -> Result<Session, RepositoryError> {
         sqlx::query_as!(
             SessionEntity,
             r#"INSERT INTO sessions (operator_id) 
@@ -49,10 +49,10 @@ impl SessionRepository for SessionRepositoryImpl {
         .fetch_one(&self.connection)
         .await
         .map(|se| se.into())
-        .map_err(|e| DomainError::Infrastructure(e.into()))
+        .map_err(|e| RepositoryError::Infrastructure(e.into()))
     }
 
-    async fn delete_by_id(&self, session_id: String) -> Result<(), DomainError> {
+    async fn delete_by_id(&self, session_id: String) -> Result<(), RepositoryError> {
         sqlx::query!(
             r#"DELETE FROM sessions WHERE session_id = $1;"#,
             session_id.into()
@@ -60,6 +60,6 @@ impl SessionRepository for SessionRepositoryImpl {
         .execute(&self.connection)
         .await
         .map(|_| ())
-        .map_err(|e| DomainError::Infrastructure(e.into()))
+        .map_err(|e| RepositoryError::Infrastructure(e.into()))
     }
 }

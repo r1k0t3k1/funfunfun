@@ -2,3 +2,6 @@ application/port/inの実装
 adapter_in_webはtraitを呼び出す
 
 また、serviceはout port経由でadapterを呼び出す
+
+TODO 
+エラーの定義

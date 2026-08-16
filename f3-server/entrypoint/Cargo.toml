@@ -28,7 +28,4 @@ util = { workspace = true }
 application = { workspace = true }
 adapter_in_web = { workspace = true }
 adapter_out_persistence = { workspace = true }
-
-#domain = { workspace = true }
-#usecase = { workspace = true }
-#infrastructure = { workspace = true }
+adapter_out_c2 = { workspace = true }

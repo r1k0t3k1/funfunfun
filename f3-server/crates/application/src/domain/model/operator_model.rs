@@ -1,4 +1,4 @@
-use crate::model::role_model::Role;
+use crate::domain::model::role_model::Role;
 
 #[derive(Clone)]
 pub struct Operator {
