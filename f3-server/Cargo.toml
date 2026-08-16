@@ -1,12 +1,14 @@
 [workspace]
 resolver = "2"
 members = [
-    "domain",
-    "usecase",
-    "infrastructure",
-    "app",
+    "entrypoint",
+    "crates/util",
+    "crates/application",
+    "crates/adapter_in_web", 
+    "crates/adapter_out_persistence", 
+    "crates/adapter_out_c2", 
 ]
-default-members = ["app"]
+default-members = ["entrypoint"]
 exclude = ["test-tools"]
 
 [workspace.package]
@@ -46,9 +48,11 @@ x25519-dalek = { version = "3.0.0", features = ["getrandom"]}
 rust-crypto = { version = "0.2.36" }
 rand = { version = "0.10" }
 
-domain = { path = "domain" }
-usecase = { path = "usecase" }
-infrastructure = { path = "infrastructure" }
+util = { path = "crates/util" }
+application = { path = "crates/application" }
+adapter_in_web= { path = "crates/adapter_in_web" }
+adapter_out_persistence= { path = "crates/adapter_out_persistence" }
+adapter_out_c2= { path = "crates/adapter_out_c2" }
 
 [profile.release]
 lto = true

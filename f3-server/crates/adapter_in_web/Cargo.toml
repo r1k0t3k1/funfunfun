@@ -1,0 +1,17 @@
+[package]
+name = "adapter_in_web"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+application = { workspace = true }
+util = { workspace = true }
+
+actix-web = { workspace = true }
+actix-session = { workspace = true }
+actix-files = { workspace = true }
+actix-cors = { workspace = true }
+actix-web-httpauth = { workspace = true }
+openssl = { workspace = true }
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
