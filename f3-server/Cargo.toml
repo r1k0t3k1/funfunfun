@@ -47,6 +47,7 @@ uuid = { version = "1.24.0", features = ["v4"] }
 x25519-dalek = { version = "3.0.0", features = ["getrandom"]}
 rust-crypto = { version = "0.2.36" }
 rand = { version = "0.10" }
+regex = { version = "1.13" }
 
 util = { path = "crates/util" }
 application = { path = "crates/application" }

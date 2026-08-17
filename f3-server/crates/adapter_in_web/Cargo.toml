@@ -22,3 +22,4 @@ base64 = { workspace = true }
 uuid = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
+regex = { workspace = true }

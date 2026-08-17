@@ -1,8 +1,8 @@
+use crate::dto::auth_dto::AuthenticatedResponse;
 use crate::{dto::operator_dto::OperatorCredential, error::ApiError};
 use crate::state::AppState;
 use actix_web::{
     HttpRequest, HttpResponse,
-    cookie::{CookieBuilder, SameSite},
     post, web,
 };
 
@@ -22,17 +22,9 @@ pub async fn login(
         .auth_usecase
         .authenticate_operator(cred.username.clone(), cred.password.clone())
         .await?;
-
+    
     let res = HttpResponse::Ok()
-        .cookie(
-            CookieBuilder::new("sessionid", session.session_id)
-                .path("/")
-                .secure(true)
-                .http_only(true)
-                .same_site(SameSite::None)
-                .finish(),
-        )
-        .finish();
+        .json(AuthenticatedResponse { access_token: session.session_id });
 
     Ok(res)
 }

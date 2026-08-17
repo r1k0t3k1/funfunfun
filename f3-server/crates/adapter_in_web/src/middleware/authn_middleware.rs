@@ -61,10 +61,20 @@ where
         let service = Arc::clone(&self.service);
 
         Box::pin(async move {
-            let session_id = req
-                .cookie("sessionid")
-                .map(|c| c.value().to_string())
+            let authorization_header = req
+                .headers()
+                .get("Authorization")
                 .ok_or_else(|| ApiError::Unauthorized)?;
+
+            let bearer_token = authorization_header.to_str()
+                .map_err(|_| ApiError::Unauthorized)?;
+            
+            let re = regex::Regex::new(r"\s*Bearer\s*").unwrap();
+            let session_token = re.replace_all(bearer_token, "").to_string();
+            
+            if session_token.len() != 64 {
+                return Err(ApiError::Unauthorized.into());
+            }
 
             let app_state = req
                 .app_data::<web::Data<AppState>>()
@@ -74,7 +84,7 @@ where
 
             let is_valid_session = app_state
                 .auth_usecase
-                .is_valid_session(session_id.clone())
+                .is_valid_session(session_token.clone())
                 .await
                 .map_err(|_| ApiError::Unauthorized)?;
 
@@ -84,7 +94,7 @@ where
 
             let operator = app_state
                 .auth_usecase
-                .get_operator_from_session(session_id)
+                .get_operator_from_session(session_token)
                 .await
                 .map_err(|e| ApiError::InternelServerError)?
                 //.map_err(|e| ApiError::UsecaseError(e))?
