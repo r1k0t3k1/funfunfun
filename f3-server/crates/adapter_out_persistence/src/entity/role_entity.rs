@@ -1,6 +1,5 @@
 use application::domain::model::role_model::Role;
 
-
 #[derive(Debug, Clone, sqlx::Type)]
 pub enum RoleEntity {
     Admin,

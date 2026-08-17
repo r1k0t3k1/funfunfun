@@ -14,6 +14,9 @@ impl AppState {
         auth_usecase: Arc<dyn AuthUsecase>,
         listener_usecase: Arc<dyn ListenerUsecase>,
     ) -> Self {
-        Self { auth_usecase, listener_usecase }
+        Self {
+            auth_usecase,
+            listener_usecase,
+        }
     }
 }

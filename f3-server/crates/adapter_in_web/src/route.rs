@@ -8,9 +8,7 @@ use crate::{
             create_listener, list_listeners, remove_listener, start_listener, stop_listener,
         },
     },
-    middleware::{
-        authn_middleware::AuthN,
-    },
+    middleware::authn_middleware::AuthN,
     state::AppState,
 };
 use actix_files::Files;
@@ -29,11 +27,7 @@ pub fn configure_route(state: web::Data<AppState>) -> impl FnOnce(&mut web::Serv
             .app_data(state)
             .service(web::scope("/health").service(health_check_db))
             .service(web::scope("/auth").service(login).service(logout))
-            .service(
-                web::scope("/after-login")
-                    .wrap(AuthN)
-                    .service(upload_file),
-            )
+            .service(web::scope("/after-login").wrap(AuthN).service(upload_file))
             .service(
                 web::scope("/listener")
                     .wrap(AuthN)

@@ -10,7 +10,7 @@ pub trait C2Manager: Send + Sync {
         addr: SocketAddr,
         protocol: ListenerProtocol,
     ) -> anyhow::Result<ListenerModel>;
-    
+
     async fn start(&mut self, listener_id: ListenerId) -> anyhow::Result<()>;
     async fn stop(&mut self, listener_id: ListenerId) -> anyhow::Result<()>;
     async fn stop_all(&mut self) -> anyhow::Result<()>;

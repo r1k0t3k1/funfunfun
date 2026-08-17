@@ -9,6 +9,8 @@ use crate::{
     state::AppState,
 };
 
+use application::domain::model::listener_model::ListenerProtocol;
+
 #[utoipa::path(
     context_path = "/listener",
     responses(
@@ -46,12 +48,16 @@ pub async fn create_listener(
     state: web::Data<AppState>,
     listener_data: web::Json<CreateListenerRequest>,
 ) -> Result<HttpResponse, ApiError> {
+    let protocol = ListenerProtocol::try_from(listener_data.protocol.to_string())
+        .map_err(|e| ApiError::BadRequest)?;
+
     state
         .listener_usecase
         .create_listener(
-            listener_data.listener_type.to_string(),
-            listener_data.lhost.clone(),
+            listener_data.name.to_string(),
+            listener_data.lhost.to_string(),
             listener_data.lport,
+            protocol,
         )
         .await
         .map(|_| HttpResponse::Ok().finish())
@@ -71,16 +77,18 @@ pub async fn start_listener(
     state: web::Data<AppState>,
     req: web::Json<StartListenerRequest>,
 ) -> Result<HttpResponse, ApiError> {
-    let listener_id = req.listener_id.parse::<uuid::Uuid>()
+    let listener_id = req
+        .listener_id
+        .parse::<uuid::Uuid>()
         .map_err(|_| ApiError::BadRequest)?;
-        //.map_err(|_| ApiError::Validation("ListenerId".to_string()))?;
+    //.map_err(|_| ApiError::Validation("ListenerId".to_string()))?;
     state
         .listener_usecase
         .start_listener(listener_id)
         .await
         .map(|_| HttpResponse::Ok().finish())
         .map_err(|e| ApiError::BadRequest)
-        //.map_err(|e| ApiError::UsecaseError(e.into()))
+    //.map_err(|e| ApiError::UsecaseError(e.into()))
 }
 
 #[utoipa::path(
@@ -95,16 +103,18 @@ pub async fn stop_listener(
     state: web::Data<AppState>,
     req: web::Json<StopListenerRequest>,
 ) -> Result<HttpResponse, ApiError> {
-    let listener_id = req.listener_id.parse::<uuid::Uuid>()
+    let listener_id = req
+        .listener_id
+        .parse::<uuid::Uuid>()
         .map_err(|_| ApiError::BadRequest)?;
-        //.map_err(|_| ApiError::Validation("ListenerId".to_string()))?;
+    //.map_err(|_| ApiError::Validation("ListenerId".to_string()))?;
     state
         .listener_usecase
         .stop_listener(listener_id)
         .await
         .map(|_| HttpResponse::Ok().finish())
         .map_err(|_| ApiError::BadRequest)
-        //.map_err(|e| ApiError::UsecaseError(e.into()))
+    //.map_err(|e| ApiError::UsecaseError(e.into()))
 }
 
 #[utoipa::path(
@@ -119,7 +129,9 @@ pub async fn remove_listener(
     state: web::Data<AppState>,
     req: web::Json<RemoveListenerRequest>,
 ) -> Result<HttpResponse, ApiError> {
-    let listener_id = req.listener_id.parse::<uuid::Uuid>()
+    let listener_id = req
+        .listener_id
+        .parse::<uuid::Uuid>()
         //.map_err(|_| ApiError::Validation("ListenerId".to_string()))?;
         .map_err(|_| ApiError::BadRequest)?;
     state

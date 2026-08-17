@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use adapter_in_web::state::AppState;
 use adapter_in_web::server::run;
+use adapter_in_web::state::AppState;
 use adapter_out_c2::c2_manager::C2ManagerImpl;
 use adapter_out_persistence::repository::operator_repository_impl::OperatorRepositoryImpl;
 use adapter_out_persistence::repository::session_repository_impl::SessionRepositoryImpl;
@@ -16,7 +16,7 @@ use tokio::sync::Mutex;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
-    
+
     let options = PgConnectOptions::new()
         .host("localhost".into())
         .port(5432)
@@ -32,7 +32,7 @@ async fn main() -> std::io::Result<()> {
         operator_repository_impl,
         session_repository_impl,
     ));
-    
+
     let c2_manager = Arc::new(Mutex::new(C2ManagerImpl::new()));
     let listener_service = Arc::new(ListenerService::new(c2_manager));
 

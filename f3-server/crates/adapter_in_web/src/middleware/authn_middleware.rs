@@ -66,12 +66,13 @@ where
                 .get("Authorization")
                 .ok_or_else(|| ApiError::Unauthorized)?;
 
-            let bearer_token = authorization_header.to_str()
+            let bearer_token = authorization_header
+                .to_str()
                 .map_err(|_| ApiError::Unauthorized)?;
-            
+
             let re = regex::Regex::new(r"\s*Bearer\s*").unwrap();
             let session_token = re.replace_all(bearer_token, "").to_string();
-            
+
             if session_token.len() != 64 {
                 return Err(ApiError::Unauthorized.into());
             }
@@ -80,7 +81,7 @@ where
                 .app_data::<web::Data<AppState>>()
                 .clone()
                 .ok_or_else(|| ApiError::InternelServerError)?;
-                //.ok_or_else(|| ApiError::InternelServerError(anyhow::anyhow!("Usecase not registered")))?;
+            //.ok_or_else(|| ApiError::InternelServerError(anyhow::anyhow!("Usecase not registered")))?;
 
             let is_valid_session = app_state
                 .auth_usecase

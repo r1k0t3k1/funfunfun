@@ -2,7 +2,6 @@ use std::net::SocketAddr;
 
 use uuid::Uuid;
 
-
 pub type ListenerId = Uuid;
 
 #[derive(Clone)]
@@ -22,21 +21,33 @@ impl std::fmt::Display for ListenerProtocol {
     }
 }
 
+impl TryFrom<String> for ListenerProtocol {
+    type Error = anyhow::Error;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "TCP" => Ok(Self::Tcp),
+            "HTTP" => Ok(Self::Http),
+            "HTTPS" => Ok(Self::Https),
+            _ => Err(anyhow::anyhow!("Invalid protocol")),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct ListenerModel {
     pub id: ListenerId,
     pub name: String,
     pub addr: SocketAddr,
-    pub protocol: ListenerProtocol
+    pub protocol: ListenerProtocol,
 }
 
 impl ListenerModel {
-    pub fn new(
-        id: ListenerId,
-        name: String,
-        addr: SocketAddr,
-        protocol: ListenerProtocol
-    ) -> Self {
-        Self { id, name, addr, protocol }
+    pub fn new(id: ListenerId, name: String, addr: SocketAddr, protocol: ListenerProtocol) -> Self {
+        Self {
+            id,
+            name,
+            addr,
+            protocol,
+        }
     }
 }

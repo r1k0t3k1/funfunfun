@@ -10,7 +10,7 @@ pub async fn run(app_state: AppState) -> std::io::Result<()> {
     let state = web::Data::new(app_state);
 
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-    
+
     builder
         .set_private_key_file("resource/certificate/key.pem", SslFiletype::PEM)
         .unwrap();

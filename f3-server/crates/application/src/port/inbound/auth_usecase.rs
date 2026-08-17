@@ -10,10 +10,7 @@ pub trait AuthUsecase: Send + Sync {
         password: String,
     ) -> Result<Session, AuthUsecaseError>;
 
-    async fn is_valid_session(
-        &self,
-        session_id: String,
-    ) -> Result<bool, AuthUsecaseError>;
+    async fn is_valid_session(&self, session_id: String) -> Result<bool, AuthUsecaseError>;
 
     async fn get_operator_from_session(
         &self,

@@ -1,8 +1,8 @@
 use sqlx::PgPool;
 
 use application::domain::model::operator_model::Operator;
-use application::port::outbound::operator_repository::OperatorRepository;
 use application::port::outbound::error::RepositoryError;
+use application::port::outbound::operator_repository::OperatorRepository;
 
 use crate::entity::operator_entity::OperatorEntity;
 use crate::entity::role_entity::RoleEntity;

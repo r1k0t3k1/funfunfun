@@ -1,10 +1,7 @@
 use crate::dto::auth_dto::AuthenticatedResponse;
-use crate::{dto::operator_dto::OperatorCredential, error::ApiError};
 use crate::state::AppState;
-use actix_web::{
-    HttpRequest, HttpResponse,
-    post, web,
-};
+use crate::{dto::operator_dto::OperatorCredential, error::ApiError};
+use actix_web::{HttpRequest, HttpResponse, post, web};
 
 #[utoipa::path(
     context_path = "/auth",
@@ -22,9 +19,10 @@ pub async fn login(
         .auth_usecase
         .authenticate_operator(cred.username.clone(), cred.password.clone())
         .await?;
-    
-    let res = HttpResponse::Ok()
-        .json(AuthenticatedResponse { access_token: session.session_id });
+
+    let res = HttpResponse::Ok().json(AuthenticatedResponse {
+        access_token: session.session_id,
+    });
 
     Ok(res)
 }

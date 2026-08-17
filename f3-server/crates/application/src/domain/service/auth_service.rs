@@ -1,6 +1,15 @@
 use std::sync::Arc;
 
-use crate::{domain::model::{operator_model::Operator, session_model::Session}, port::{inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError}, outbound::{error::RepositoryError, operator_repository::OperatorRepository, session_repository::SessionRepository}}};
+use crate::{
+    domain::model::{operator_model::Operator, session_model::Session},
+    port::{
+        inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError},
+        outbound::{
+            error::RepositoryError, operator_repository::OperatorRepository,
+            session_repository::SessionRepository,
+        },
+    },
+};
 
 #[derive(Clone)]
 pub struct AuthService {
@@ -46,10 +55,7 @@ impl AuthUsecase for AuthService {
             .map_err(|e| AuthUsecaseError::Unexpected(e.into()))
     }
 
-    async fn is_valid_session(
-        &self,
-        session_id: String,
-    ) -> Result<bool, AuthUsecaseError> {
+    async fn is_valid_session(&self, session_id: String) -> Result<bool, AuthUsecaseError> {
         let session = self
             .session_repository
             .find_by_id(session_id.into())
@@ -95,4 +101,3 @@ impl AuthUsecase for AuthService {
             .map_err(|e| AuthUsecaseError::Unexpected(e.into()))
     }
 }
-

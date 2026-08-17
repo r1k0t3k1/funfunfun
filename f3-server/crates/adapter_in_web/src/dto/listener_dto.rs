@@ -4,9 +4,9 @@ use utoipa::ToSchema;
 #[derive(Deserialize, ToSchema)]
 pub struct CreateListenerRequest {
     pub name: String,
-    pub listener_type: ListenerType,
     pub lhost: String,
     pub lport: u16,
+    pub protocol: ListenerType,
 }
 
 #[derive(Deserialize, ToSchema)]

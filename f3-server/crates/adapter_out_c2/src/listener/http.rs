@@ -2,7 +2,13 @@ use std::net::SocketAddr;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
-use application::{domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol}, port::outbound::{agent::{Agent, AgentId}, listener::ListenerPort}};
+use application::{
+    domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol},
+    port::outbound::{
+        agent::{Agent, AgentId},
+        listener::ListenerPort,
+    },
+};
 use uuid::Uuid;
 
 pub struct HttpListener {
@@ -15,16 +21,12 @@ pub struct HttpListener {
 }
 
 impl HttpListener {
-    pub fn new(
-        name: String,
-        addr: SocketAddr,
-        protocol: ListenerProtocol,
-    ) -> Self {
-        Self { 
+    pub fn new(name: String, addr: SocketAddr, protocol: ListenerProtocol) -> Self {
+        Self {
             id: Uuid::new_v4(),
-            name, 
-            addr, 
-            protocol, 
+            name,
+            addr,
+            protocol,
             join_handle: None,
             cancel_token: CancellationToken::new(),
         }
@@ -33,21 +35,16 @@ impl HttpListener {
 
 impl From<ListenerModel> for HttpListener {
     fn from(value: ListenerModel) -> Self {
-        HttpListener::new(
-            value.name,
-            value.addr,
-            value.protocol,
-        )
-        
+        HttpListener::new(value.name, value.addr, value.protocol)
     }
 }
 
 impl Into<ListenerModel> for &HttpListener {
     fn into(self) -> ListenerModel {
-        ListenerModel { 
+        ListenerModel {
             id: self.id,
             name: self.name.clone(),
-            addr: self.addr, 
+            addr: self.addr,
             protocol: self.protocol.clone(),
         }
     }
@@ -55,15 +52,23 @@ impl Into<ListenerModel> for &HttpListener {
 
 #[async_trait::async_trait]
 impl ListenerPort for HttpListener {
-    fn id(&self) -> ListenerId { self.id }
-    fn name(&self) -> String { self.name.to_string() }
-    fn addr(&self) -> SocketAddr { self.addr }
-    fn protocol(&self) -> ListenerProtocol { self.protocol.clone() }
+    fn id(&self) -> ListenerId {
+        self.id
+    }
+    fn name(&self) -> String {
+        self.name.to_string()
+    }
+    fn addr(&self) -> SocketAddr {
+        self.addr
+    }
+    fn protocol(&self) -> ListenerProtocol {
+        self.protocol.clone()
+    }
     fn listener_model(&self) -> ListenerModel {
-        ListenerModel { 
+        ListenerModel {
             id: self.id(),
             name: self.name(),
-            addr: self.addr(), 
+            addr: self.addr(),
             protocol: self.protocol(),
         }
     }
@@ -76,32 +81,31 @@ impl ListenerPort for HttpListener {
         todo!()
     }
 
-    fn set_join_handle(&mut self,join_handle: JoinHandle<()>) {
+    fn set_join_handle(&mut self, join_handle: JoinHandle<()>) {
         todo!()
     }
 
-    fn set_cancel_token(&mut self,cancel_token: CancellationToken) {
+    fn set_cancel_token(&mut self, cancel_token: CancellationToken) {
         todo!()
     }
 
-    fn get_cancel_token(&mut self) -> Option<CancellationToken>  {
+    fn get_cancel_token(&mut self) -> Option<CancellationToken> {
         todo!()
     }
 
-    fn list_agents(&self) -> Vec<Agent>  {
+    fn list_agents(&self) -> Vec<Agent> {
         todo!()
     }
 
-    fn add_agents(&mut self,agent: Agent) -> anyhow::Result<()>  {
+    fn add_agents(&mut self, agent: Agent) -> anyhow::Result<()> {
         todo!()
     }
 
-    fn remove_agent(&mut self,agent_id: AgentId) -> anyhow::Result<()>  {
+    fn remove_agent(&mut self, agent_id: AgentId) -> anyhow::Result<()> {
         todo!()
     }
 
     fn remove_all_agent(&mut self) {
         todo!()
     }
-
 }
