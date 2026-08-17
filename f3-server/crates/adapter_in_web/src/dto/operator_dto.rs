@@ -1,11 +1,11 @@
 use std::pin::Pin;
 
 use actix_web::{FromRequest, HttpMessage, HttpRequest, dev::Payload};
-use domain::model::operator_model::Operator;
+use application::domain::model::operator_model::Operator;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::{dto::role_dto::Role, error::AppError};
+use crate::{dto::role_dto::Role, error::ApiError};
 
 #[derive(Deserialize, ToSchema)]
 pub struct OperatorCredential {
@@ -39,12 +39,12 @@ impl From<Operator> for AuthOperator {
 }
 
 impl FromRequest for AuthOperator {
-    type Error = AppError;
+    type Error = ApiError;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         let request = req.clone();
         let operator = request.extensions().get::<AuthOperator>().cloned();
-        Box::pin(async move { operator.ok_or_else(|| AppError::Unauthorized) })
+        Box::pin(async move { operator.ok_or_else(|| ApiError::Unauthorized) })
     }
 }

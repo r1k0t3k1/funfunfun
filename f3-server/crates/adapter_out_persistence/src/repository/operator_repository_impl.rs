@@ -69,7 +69,7 @@ impl OperatorRepository for OperatorRepositoryImpl {
         .fetch_optional(&mut *tx)
         .await
         .map_err(|e| RepositoryError::Infrastructure(e.into()))?
-        .ok_or_else(|| InvalidCredentials)?;
+        .ok_or_else(|| RepositoryError::NotFound)?;
 
         let is_password_match: bool = sqlx::query_scalar!(
             r#"SELECT
@@ -91,7 +91,7 @@ impl OperatorRepository for OperatorRepositoryImpl {
 
         match is_password_match {
             true => Ok(Some(operator.into())),
-            false => Err(RepositoryError::InvalidCredentials),
+            false => Err(RepositoryError::NotFound),
         }
     }
 }

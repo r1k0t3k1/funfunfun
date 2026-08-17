@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{domain::model::{operator_model::Operator, session_model::Session}, port::{inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError}, outbound::{operator_repository::OperatorRepository, session_repository::SessionRepository}}};
+use crate::{domain::model::{operator_model::Operator, session_model::Session}, port::{inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError}, outbound::{error::RepositoryError, operator_repository::OperatorRepository, session_repository::SessionRepository}}};
 
 #[derive(Clone)]
 pub struct AuthService {
@@ -24,8 +24,8 @@ impl AuthService {
 impl AuthUsecase for AuthService {
     async fn authenticate_operator(
         &self,
-        operator_id: impl Into<String>,
-        password: impl Into<String>,
+        operator_id: String,
+        password: String,
     ) -> Result<Session, AuthUsecaseError> {
         let operator = self
             .operator_repository
@@ -34,11 +34,11 @@ impl AuthUsecase for AuthService {
             .map_err(|e| {
                 log::error!("{e}");
                 match e {
-                    DomainError::InvalidCredentials => AuthUsecaseError::Unauthorized,
+                    RepositoryError::NotFound => AuthUsecaseError::AuthenticationFailed,
                     _ => AuthUsecaseError::Unexpected(e.into()),
                 }
             })?
-            .ok_or(AuthUsecaseError::Unauthorized)?;
+            .ok_or(AuthUsecaseError::AuthenticationFailed)?;
 
         self.session_repository
             .insert(operator.operator_id)
@@ -48,14 +48,14 @@ impl AuthUsecase for AuthService {
 
     async fn is_valid_session(
         &self,
-        session_id: impl Into<String>,
+        session_id: String,
     ) -> Result<bool, AuthUsecaseError> {
         let session = self
             .session_repository
             .find_by_id(session_id.into())
             .await
             .map_err(|e| AuthUsecaseError::Unexpected(e.into()))?
-            .ok_or_else(|| AuthUsecaseError::Unauthorized)?;
+            .ok_or_else(|| AuthUsecaseError::AuthenticationFailed)?;
 
         if session.is_expired() {
             return Ok(false);
@@ -66,14 +66,14 @@ impl AuthUsecase for AuthService {
 
     async fn get_operator_from_session(
         &self,
-        session_id: impl Into<String>,
+        session_id: String,
     ) -> Result<Option<Operator>, AuthUsecaseError> {
         let session = self
             .session_repository
             .find_by_id(session_id.into())
             .await
             .map_err(|e| AuthUsecaseError::Unexpected(e.into()))?
-            .ok_or_else(|| AuthUsecaseError::Unauthorized)?;
+            .ok_or_else(|| AuthUsecaseError::AuthenticationFailed)?;
 
         if session.is_expired() {
             return Err(AuthUsecaseError::SessionExpired);
@@ -83,7 +83,7 @@ impl AuthUsecase for AuthService {
             .operator_repository
             .find_by_id(session.operator_id)
             .await
-            .map_err(|e| AuthUsecaseError::Domain(e.into()))?;
+            .map_err(|e| AuthUsecaseError::Unexpected(e.into()))?;
 
         Ok(operator)
     }

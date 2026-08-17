@@ -11,12 +11,5 @@ use crate::state::AppState;
 )]
 #[get("/db")]
 pub async fn health_check_db(state: web::Data<AppState>) -> impl Responder {
-    let connection_result = sqlx::query("SELECT 1")
-        .fetch_one(&state.db_connection)
-        .await;
-    let res = match connection_result {
-        Ok(_) => HttpResponse::Ok(),
-        Err(_) => HttpResponse::InternalServerError(),
-    };
-    res
+    HttpResponse::Ok() // TODO
 }

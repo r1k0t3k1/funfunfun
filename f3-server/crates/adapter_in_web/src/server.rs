@@ -4,18 +4,18 @@ use actix_cors::Cors;
 use actix_web::{App, HttpServer, http, middleware::Logger, web};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
-use crate::inbound::web::route::configure_route;
+use crate::{route::configure_route, state::AppState};
 
 pub async fn run(app_state: AppState) -> std::io::Result<()> {
     let state = web::Data::new(app_state);
 
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-
+    
     builder
-        .set_private_key_file("app/src/resource/certificate/key.pem", SslFiletype::PEM)
+        .set_private_key_file("resource/certificate/key.pem", SslFiletype::PEM)
         .unwrap();
     builder
-        .set_certificate_file("app/src/resource/certificate/cert.pem", SslFiletype::PEM)
+        .set_certificate_file("resource/certificate/cert.pem", SslFiletype::PEM)
         .unwrap();
 
     let port = env::var("PORT").unwrap();
@@ -23,7 +23,6 @@ pub async fn run(app_state: AppState) -> std::io::Result<()> {
     HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin("http://127.0.0.1:1420")
-            .allowed_origin_fn(|origin, _req_head| origin.as_bytes().ends_with(b".rust-lang.org"))
             .allowed_methods(vec!["GET", "POST"])
             .allowed_header(http::header::CONTENT_TYPE)
             .allowed_header(http::header::ACCEPT)

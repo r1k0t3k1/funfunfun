@@ -1,5 +1,5 @@
-use crate::dto::operator_dto::OperatorCredential;
-use crate::{error::AppError, state::AppState};
+use crate::{dto::operator_dto::OperatorCredential, error::ApiError};
+use crate::state::AppState;
 use actix_web::{
     HttpRequest, HttpResponse,
     cookie::{CookieBuilder, SameSite},
@@ -17,7 +17,7 @@ use actix_web::{
 pub async fn login(
     state: web::Data<AppState>,
     cred: web::Json<OperatorCredential>,
-) -> Result<HttpResponse, AppError> {
+) -> Result<HttpResponse, ApiError> {
     let session = state
         .auth_usecase
         .authenticate_operator(cred.username.clone(), cred.password.clone())
@@ -47,7 +47,7 @@ pub async fn login(
 pub async fn logout(
     state: web::Data<AppState>,
     req: HttpRequest,
-) -> Result<HttpResponse, AppError> {
+) -> Result<HttpResponse, ApiError> {
     let session_id = req.cookie("session_id");
 
     if session_id.is_none() {

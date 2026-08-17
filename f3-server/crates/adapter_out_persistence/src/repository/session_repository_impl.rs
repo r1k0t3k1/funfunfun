@@ -1,3 +1,4 @@
+use application::port::outbound::error::RepositoryError;
 use sqlx::PgPool;
 use sqlx::postgres::types::PgHstore;
 

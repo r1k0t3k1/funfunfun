@@ -43,6 +43,8 @@ impl std::fmt::Display for ListenerType {
 
 #[derive(Serialize, ToSchema)]
 pub struct ListListenerResponse {
+    pub id: String,
     pub name: String,
     pub addr: String,
+    pub protocol: String,
 }

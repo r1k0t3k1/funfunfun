@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use application::{domain::service::listener_service::ListenerUsecase, port::inbound::auth_usecase::AuthUsecase};
+use application::port::inbound::auth_usecase::AuthUsecase;
+use application::port::inbound::listener_usecase::ListenerUsecase;
 
 #[derive(Clone)]
 pub struct AppState {

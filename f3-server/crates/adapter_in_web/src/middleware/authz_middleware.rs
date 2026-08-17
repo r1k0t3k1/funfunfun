@@ -11,7 +11,7 @@ use futures_util::future::LocalBoxFuture;
 
 use crate::{
     dto::{operator_dto::AuthOperator, role_dto::Role},
-    error::AppError,
+    error::ApiError,
 };
 
 #[derive(Clone)]
@@ -96,12 +96,12 @@ where
             let operator = req
                 .extensions()
                 .get::<AuthOperator>()
-                .ok_or_else(|| AppError::Unauthorized)?
+                .ok_or_else(|| ApiError::Unauthorized)?
                 .clone();
             let has_permission = required_role.check_permission(&operator);
 
             if !has_permission {
-                return Err(AppError::Forbidden.into());
+                return Err(ApiError::Forbidden.into());
             }
 
             service.call(req).await

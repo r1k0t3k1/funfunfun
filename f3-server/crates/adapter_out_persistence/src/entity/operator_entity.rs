@@ -1,6 +1,5 @@
+use application::domain::model::operator_model::Operator;
 use sqlx::types::chrono;
-
-use domain::model::operator_model::Operator;
 
 use crate::entity::role_entity::RoleEntity;
 

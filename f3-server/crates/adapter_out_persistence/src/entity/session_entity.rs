@@ -1,4 +1,4 @@
-use domain::model::session_model::Session;
+use application::domain::model::session_model::Session;
 use sqlx::{postgres::types::PgHstore, types::chrono};
 
 #[derive(Clone)]

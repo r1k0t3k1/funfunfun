@@ -1,19 +1,15 @@
 use crate::{
     apidocs::swagger_ui,
-    dto::role_dto::Role::{Admin, Read, Write},
-    handler::{
-        after_login_handler::after_login,
-        auth_handler::{login, logout},
-        file_upload_handler::upload_file,
-        health_handler::health_check_db,
-        listener_handler::{
+    controller::{
+        auth_controller::{login, logout},
+        file_upload_controller::upload_file,
+        health_controller::health_check_db,
+        listener_controller::{
             create_listener, list_listeners, remove_listener, start_listener, stop_listener,
         },
-        required_role_handler::{admin, read, write},
     },
     middleware::{
         authn_middleware::AuthN,
-        authz_middleware::{AuthZ, RoleRequirement},
     },
     state::AppState,
 };
@@ -36,7 +32,6 @@ pub fn configure_route(state: web::Data<AppState>) -> impl FnOnce(&mut web::Serv
             .service(
                 web::scope("/after-login")
                     .wrap(AuthN)
-                    .service(after_login)
                     .service(upload_file),
             )
             .service(
@@ -48,30 +43,12 @@ pub fn configure_route(state: web::Data<AppState>) -> impl FnOnce(&mut web::Serv
                     .service(stop_listener)
                     .service(remove_listener),
             )
-            .service(
-                web::scope("/required-role-admin")
-                    .wrap(AuthZ::new(RoleRequirement::Is(Admin)))
-                    .wrap(AuthN)
-                    .service(admin),
-            )
-            .service(
-                web::scope("/required-role-write")
-                    .wrap(AuthZ::new(RoleRequirement::Is(Write)))
-                    .wrap(AuthN)
-                    .service(write),
-            )
-            .service(
-                web::scope("/required-role-read")
-                    .wrap(AuthZ::new(RoleRequirement::Is(Read)))
-                    .wrap(AuthN)
-                    .service(read),
-            )
             .service(swagger_ui())
             .service(
                 web::scope("/download")
                     .wrap(HttpAuthentication::basic(validator))
                     .service(
-                        Files::new("/", "./app/src/resource/download")
+                        Files::new("/", "resource/download")
                             .show_files_listing()
                             .use_hidden_files(),
                     ),

@@ -8,3 +8,4 @@ application = { workspace = true }
 util = { workspace = true }
 
 sqlx = { workspace = true }
+async-trait = { workspace = true }

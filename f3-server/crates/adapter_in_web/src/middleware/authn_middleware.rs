@@ -10,7 +10,8 @@ use actix_web::{
 };
 use futures_util::future::LocalBoxFuture;
 
-use crate::{dto::operator_dto::AuthOperator, error::AppError, state::AppState};
+use crate::{dto::operator_dto::AuthOperator, error::ApiError, state::AppState};
+
 // There are two steps in middleware processing.
 // 1. Middleware initialization, middleware factory gets called with
 //    next service in chain as parameter.
@@ -63,29 +64,31 @@ where
             let session_id = req
                 .cookie("sessionid")
                 .map(|c| c.value().to_string())
-                .ok_or_else(|| AppError::Unauthorized)?;
+                .ok_or_else(|| ApiError::Unauthorized)?;
 
             let app_state = req
                 .app_data::<web::Data<AppState>>()
                 .clone()
-                .ok_or_else(|| AppError::Unexpected(anyhow::anyhow!("Usecase not registered")))?;
+                .ok_or_else(|| ApiError::InternelServerError)?;
+                //.ok_or_else(|| ApiError::InternelServerError(anyhow::anyhow!("Usecase not registered")))?;
 
             let is_valid_session = app_state
                 .auth_usecase
-                .is_valid_session(&session_id)
+                .is_valid_session(session_id.clone())
                 .await
-                .map_err(|_| AppError::Unauthorized)?;
+                .map_err(|_| ApiError::Unauthorized)?;
 
             if !is_valid_session {
-                return Err(AppError::Unauthorized.into());
+                return Err(ApiError::Unauthorized.into());
             }
 
             let operator = app_state
                 .auth_usecase
-                .get_operator_from_session(&session_id)
+                .get_operator_from_session(session_id)
                 .await
-                .map_err(|e| AppError::UsecaseError(e))?
-                .ok_or_else(|| AppError::Unauthorized)?;
+                .map_err(|e| ApiError::InternelServerError)?
+                //.map_err(|e| ApiError::UsecaseError(e))?
+                .ok_or_else(|| ApiError::Unauthorized)?;
 
             req.extensions_mut().insert(AuthOperator::from(operator));
             service.call(req).await

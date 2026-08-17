@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+use application::domain::model::role_model::Role as DomainRole;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
 pub enum Role {
@@ -8,12 +9,12 @@ pub enum Role {
     Read,
 }
 
-impl From<domain::model::role_model::Role> for Role {
-    fn from(value: domain::model::role_model::Role) -> Self {
+impl From<DomainRole> for Role {
+    fn from(value: DomainRole) -> Self {
         match value {
-            domain::model::role_model::Role::Admin => Self::Admin,
-            domain::model::role_model::Role::Write => Self::Write,
-            domain::model::role_model::Role::Read => Self::Read,
+            DomainRole::Admin => Self::Admin,
+            DomainRole::Write => Self::Write,
+            DomainRole::Read => Self::Read,
         }
     }
 }
