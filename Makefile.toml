@@ -111,14 +111,14 @@ extend = "set-env-local"
 install_crate = { crate_name = "sqlx-cli", binary = "sqlx", test_arg = "--help", version = "0.9.0" }
 cwd = "./f3-server"
 command = "sqlx"
-args = ["migrate", "run", "--source", "infrastructure/src/repository/migration"]
+args = ["migrate", "run", "--source", "crates/adapter_out_persistence/src/migration"]
 
 [tasks.sqlx]
 extend = "set-env-local"
 install_crate = { crate_name = "sqlx-cli", binary = "sqlx", test_arg = "--help", version = "0.9.0" }
 cwd = "./f3-server"
 command = "sqlx"
-args = ["${@}", "--source", "infrastructure/src/repository/migration"]
+args = ["${@}", "--source", "crates/adapter_out_persistence/src/migration"]
 
 [tasks.psql]
 extend = "set-env-local"
