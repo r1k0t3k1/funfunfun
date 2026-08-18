@@ -30,7 +30,7 @@ jobs:
         run: cargo make build
 
       - name: generate openapi.json
-        run: cargo test export_openapi_json
+        run: cargo test -p adapter_in_web export_openapi_json
 
       - name: check diff 
         run: git diff --exit-code openapi.json

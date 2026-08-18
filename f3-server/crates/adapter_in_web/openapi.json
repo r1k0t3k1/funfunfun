@@ -124,7 +124,14 @@
         "operationId": "list_listeners",
         "responses": {
           "200": {
-            "description": "Listenerの一覧"
+            "description": "Listenerの一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListListenerResponse"
+                }
+              }
+            }
           },
           "500": {
             "description": "ハンドリングできない異常"
@@ -235,6 +242,29 @@
           },
           "protocol": {
             "$ref": "#/components/schemas/ListenerType"
+          }
+        }
+      },
+      "ListListenerResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "addr",
+          "protocol"
+        ],
+        "properties": {
+          "addr": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string"
           }
         }
       },

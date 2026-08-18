@@ -23,7 +23,7 @@ impl C2ManagerImpl {
 
 #[async_trait::async_trait]
 impl C2Manager for C2ManagerImpl {
-    fn add_listener(
+    async fn add_listener(
         &mut self,
         name: String,
         addr: SocketAddr,
@@ -33,6 +33,13 @@ impl C2Manager for C2ManagerImpl {
             ListenerProtocol::Http => {
                 let listener = HttpListener::new(name.clone(), addr, protocol.clone());
                 let listener_model = Into::<ListenerModel>::into(&listener);
+                
+                for l in self.listeners.values() {
+                    if l.lock().await.addr() == addr {
+                        return Err(anyhow!("Address already in use."));
+                    }
+                }
+
                 self.listeners
                     .insert(listener.id, Arc::new(Mutex::new(listener)));
                 Ok(listener_model)
@@ -47,9 +54,10 @@ impl C2Manager for C2ManagerImpl {
             .get(&listener_id)
             .ok_or(anyhow!("Listener {listener_id} not found"))?;
 
-        let (name, addr, protocol) = {
-            let listener = listener_arc.lock().await;
-            (listener.name(), listener.addr(), listener.protocol())
+        let protocol = {
+            listener_arc.lock()
+                .await
+                .protocol()
         };
 
         match protocol {

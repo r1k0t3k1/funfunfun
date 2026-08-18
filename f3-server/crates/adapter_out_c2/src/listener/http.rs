@@ -33,6 +33,12 @@ pub struct HttpListener {
     pub cancel_token: CancellationToken,
 }
 
+impl Drop for HttpListener {
+    fn drop(&mut self) {
+        self.cancel_token.cancel();
+    }
+}
+
 impl HttpListener {
     pub fn new(name: String, addr: SocketAddr, protocol: ListenerProtocol) -> Self {
         Self {
@@ -218,4 +224,6 @@ async fn handle_request(req: Request<Incoming>) -> Result<Response<Full<Bytes>>,
         .unwrap()
     )
 }
+
+
 

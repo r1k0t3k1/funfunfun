@@ -14,7 +14,7 @@ use application::domain::model::listener_model::ListenerProtocol;
 #[utoipa::path(
     context_path = "/listener",
     responses(
-        (status = 200, description = "Listenerの一覧"),
+        (status = 200, body = ListListenerResponse, description = "Listenerの一覧"),
         (status = 500, description = "ハンドリングできない異常")
     )
 )]

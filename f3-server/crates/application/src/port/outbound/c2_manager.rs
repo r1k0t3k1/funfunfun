@@ -4,7 +4,7 @@ use crate::domain::model::listener_model::{ListenerId, ListenerModel, ListenerPr
 
 #[async_trait::async_trait]
 pub trait C2Manager: Send + Sync {
-    fn add_listener(
+    async fn add_listener(
         &mut self,
         name: String,
         addr: SocketAddr,

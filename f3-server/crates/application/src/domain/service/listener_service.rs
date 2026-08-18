@@ -33,6 +33,7 @@ impl ListenerUsecase for ListenerService {
 
         let socket_addr = SocketAddr::new(addr, lport);
         c2_manager.add_listener(name, socket_addr, protocol)
+            .await
             .map_err(|e| ListenerUsecaseError::AddressAlreadyInUse)?;
         Ok(())
     }
