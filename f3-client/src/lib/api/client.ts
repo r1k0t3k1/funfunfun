@@ -101,8 +101,11 @@ export type AuthenticatedResponse = {
  * /listener/list のレスポンス要素。
  * openapi.json にレスポンススキーマが定義されていないため、
  * サーバの ListListenerResponse に合わせて手動定義する。
+ * サーバ側で `id`（識別子）と `protocol`（種別）が追加されたため追従する。
  */
 export type ListenerListItem = {
+  id: string;
   name: string;
   addr: string;
+  protocol: string;
 };

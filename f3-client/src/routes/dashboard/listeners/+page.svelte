@@ -27,7 +27,8 @@
   } from "$lib/api/listener";
   import type { ListenerListItem, ListenerType } from "$lib/api/client";
 
-  type Row = ListenerListItem & { id: string };
+  // ListenerListItem は id を持つため、そのまま DataTable の行として扱える。
+  type Row = ListenerListItem;
 
   let rows = $state<Row[]>([]);
   let loading = $state(false);
@@ -43,6 +44,7 @@
 
   const headers = [
     { key: "name", value: "名前" },
+    { key: "protocol", value: "種別" },
     { key: "addr", value: "アドレス" },
     { key: "overflow", empty: true },
   ] as const;
@@ -51,9 +53,8 @@
     loading = true;
     errorMessage = "";
     try {
-      const items = await listListeners();
-      // 一覧にはIDが無いため name を識別子として扱う。
-      rows = items.map((i) => ({ ...i, id: i.name }));
+      // サーバが返す id をそのまま識別子として使う（起動/停止/削除で利用）。
+      rows = await listListeners();
     } catch (e) {
       errorMessage = e instanceof Error ? e.message : "取得に失敗しました";
     } finally {
@@ -151,6 +152,8 @@
         </OverflowMenu>
       {:else if cell.key === "name"}
         <Tag type="cool-gray">{cell.value}</Tag>
+      {:else if cell.key === "protocol"}
+        <Tag type="teal">{cell.value}</Tag>
       {:else}
         {cell.value}
       {/if}
