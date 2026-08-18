@@ -205,7 +205,7 @@
   }
 
   .page-header p {
-    color: var(--cds-text-secondary, #525252);
+    color: var(--cds-text-secondary, #c6c6c6);
   }
 
   .form-field {
@@ -214,6 +214,6 @@
 
   .empty {
     margin-top: 1rem;
-    color: var(--cds-text-secondary, #525252);
+    color: var(--cds-text-secondary, #c6c6c6);
   }
 </style>

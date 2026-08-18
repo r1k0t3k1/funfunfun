@@ -79,6 +79,7 @@ api.use({
 
 // ---- openapi.json 由来のリクエスト型エイリアス ----
 export type OperatorCredential = components["schemas"]["OperatorCredential"];
+export type GetOperatorRequest = components["schemas"]["GetOperatorRequest"];
 export type CreateListenerRequest =
   components["schemas"]["CreateListenerRequest"];
 export type RemoveListenerRequest =
@@ -108,4 +109,22 @@ export type ListenerListItem = {
   name: string;
   addr: string;
   protocol: string;
+};
+
+/**
+ * オペレータの権限ロール。
+ * サーバの Role（Admin / Write / Read）に対応する文字列。
+ */
+export type OperatorRole = "Admin" | "Write" | "Read";
+
+/**
+ * /operator/list・/operator/get のレスポンス要素。
+ * openapi.json にレスポンススキーマが定義されていないため、
+ * サーバの OperatorResponse に合わせて手動定義する。
+ */
+export type OperatorResponse = {
+  id: string;
+  name: string;
+  description: string;
+  role: OperatorRole;
 };
