@@ -74,7 +74,7 @@
     try {
       await createListener({
         name: formName,
-        listener_type: formType,
+        protocol: formType,
         lhost: formLhost,
         lport: formLport,
       });
