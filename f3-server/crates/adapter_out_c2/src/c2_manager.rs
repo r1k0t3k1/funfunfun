@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use application::domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol};
 use application::port::outbound::c2_manager::C2Manager;
-use application::port::outbound::listener::{self, ListenerPort};
+use application::port::outbound::listener::ListenerPort;
 use std::sync::Arc;
 use std::{collections::HashMap, net::SocketAddr};
 use tokio::sync::Mutex;
@@ -47,27 +47,15 @@ impl C2Manager for C2ManagerImpl {
             .get(&listener_id)
             .ok_or(anyhow!("Listener {listener_id} not found"))?;
 
-        let mut listener = listener_arc.lock().await;
-
-        let name = listener.name();
-        let addr = listener.addr();
-
-        let handle = match listener.protocol() {
-            ListenerProtocol::Http => tokio::spawn({
-                let listener_arc = listener_arc.clone();
-                async move {
-                    let mut listener = listener_arc.lock().await;
-                    if let Err(e) = listener.start().await {
-                        log::error!("HTTP Listener error: {e}")
-                    }
-                }
-            }),
-            _ => todo!(),
+        let (name, addr, protocol) = {
+            let listener = listener_arc.lock().await;
+            (listener.name(), listener.addr(), listener.protocol())
         };
 
-        listener.set_join_handle(handle);
-
-        log::info!("[+] HTTP listener {} started on {}", name, addr,);
+        match protocol {
+            ListenerProtocol::Http => HttpListener::spawn_server(listener_arc.clone()).await?,
+            _ => todo!(),
+        };
         Ok(())
     }
 
@@ -81,7 +69,6 @@ impl C2Manager for C2ManagerImpl {
 
         listener.stop().await?;
 
-        log::info!("[*] Listener {listener_id} stopped");
         Ok(())
     }
 

@@ -9,6 +9,9 @@ util = { workspace = true }
 
 tokio = { workspace = true }
 tokio-util = { workspace = true }
+hyper = { workspace = true }
+hyper-util = { workspace = true }
+http-body-util = { workspace = true }
 async-trait = { workspace = true }
 anyhow = { workspace = true }
 uuid = { workspace = true }
