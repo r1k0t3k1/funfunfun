@@ -148,6 +148,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/operator/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["get_operator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/operator/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["list_operators"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -158,6 +190,15 @@ export interface components {
             lport: number;
             name: string;
             protocol: components["schemas"]["ListenerType"];
+        };
+        GetOperatorRequest: {
+            operator_id: string;
+        };
+        ListListenerResponse: {
+            addr: string;
+            id: string;
+            name: string;
+            protocol: string;
         };
         /** @enum {string} */
         ListenerType: "TCP" | "HTTP" | "HTTPS";
@@ -331,7 +372,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ListListenerResponse"];
+                };
             };
             /** @description ハンドリングできない異常 */
             500: {
@@ -422,6 +465,46 @@ export interface operations {
             };
             /** @description Listenerの停止に失敗 */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_operator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetOperatorRequest"];
+            };
+        };
+        responses: {
+            /** @description オペレータ詳細情報 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_operators: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description オペレータ一覧 */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
