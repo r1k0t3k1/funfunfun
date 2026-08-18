@@ -12,11 +12,20 @@
     Content,
   } from "carbon-components-svelte";
   import Network_3 from "carbon-icons-svelte/lib/Network_3.svelte";
+  import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { logout } from "$lib/stores/auth";
+  import { getAccessToken } from "$lib/api/token";
 
   let { children } = $props();
+
+  // 未認証（トークン無し）でダッシュボードへ来た場合はログイン画面へ戻す。
+  onMount(() => {
+    if (getAccessToken() === null) {
+      goto("/");
+    }
+  });
 
   // メニューバーの表示切り替え（サイドナビの開閉）
   let isSideNavOpen = $state(true);

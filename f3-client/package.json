@@ -5,11 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "dev:web": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "lint": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "node --test",
     "gen:api": "openapi-typescript ./openapi.json -o ./src/lib/api/schema.d.ts",
+    "generate:api": "openapi-typescript ./openapi.json -o ./src/lib/api/schema.d.ts",
     "tauri": "tauri"
   },
   "license": "MIT",

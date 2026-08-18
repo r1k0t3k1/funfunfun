@@ -1,6 +1,8 @@
 import createClient from "openapi-fetch";
-import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
+import { isTauri } from "@tauri-apps/api/core";
 import type { paths, components } from "./schema";
+import { getAccessToken } from "./token";
+import { bearer } from "./authHeader";
 
 /**
  * f3-server のベース URL。
@@ -11,7 +13,7 @@ export const API_BASE_URL =
 
 /**
  * localhost / 127.0.0.1 の開発サーバは自己署名証明書のため、
- * その場合のみ TLS 検証を無効化する（本番の外部ホストでは有効のまま）。
+ * Tauri（reqwest）経由の場合のみ TLS 検証を無効化する。
  */
 const isLocalHost = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(
   API_BASE_URL,
@@ -20,21 +22,28 @@ const isLocalHost = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(
 /**
  * openapi-fetch から利用するカスタム fetch。
  *
- * webview 標準の fetch はクロスオリジンのセッション Cookie を
- * （SameSite / WebKit のサードパーティ Cookie ブロック等で）送出できない。
- * Tauri HTTP プラグイン（Rust の reqwest 経由）を使うことで CORS を回避し、
- * reqwest の cookie_store がセッション Cookie を自動で保持・送出する。
+ * 認証が Cookie から `Authorization: Bearer` トークンへ変わったため、
+ * クロスオリジン Cookie を保持する目的で Tauri HTTP プラグインを使う必要は
+ * なくなった。よって：
+ *   - ブラウザ（vite dev / dev:web）では標準の fetch をそのまま使い、
+ *     HTML+JS だけで画面遷移・API 操作ができる。
+ *   - Tauri WebView 上でのみ、自己署名証明書を許可するために
+ *     HTTP プラグイン（reqwest）へフォールバックする。
  *
- * openapi-fetch は fetch(request, requestInitExt) の形で呼ぶため、
- * ClientOptions（danger 等）はここで注入する。
+ * プラグインはブラウザには存在しないため、Tauri 実行時だけ動的 import する。
  */
 async function apiFetch(input: Request): Promise<Response> {
   try {
-    return await tauriFetch(input, {
-      danger: isLocalHost
-        ? { acceptInvalidCerts: true, acceptInvalidHostnames: true }
-        : undefined,
-    });
+    if (isTauri()) {
+      const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
+      return await tauriFetch(input, {
+        danger: isLocalHost
+          ? { acceptInvalidCerts: true, acceptInvalidHostnames: true }
+          : undefined,
+      });
+    }
+    // ブラウザ実行時は標準 fetch。Cookie に依存しないため credentials は不要。
+    return await globalThis.fetch(input);
   } catch (e) {
     // Tauri プラグインは文字列を throw することがあるため、
     // 元のエラー内容を握り潰さず Error にして上位へ伝える。
@@ -46,12 +55,26 @@ async function apiFetch(input: Request): Promise<Response> {
 
 /**
  * openapi.json から生成した型（./schema.d.ts）を用いた型安全な HTTP クライアント。
- * Cookie は Tauri HTTP プラグイン側の cookie_store が保持するため
- * credentials 指定は不要。
  */
 export const api = createClient<paths>({
   baseUrl: API_BASE_URL,
   fetch: apiFetch,
+});
+
+/**
+ * 認証ミドルウェア。
+ * 保持しているアクセストークンを `Authorization: Bearer <token>` として
+ * 全リクエストに付与する（未ログイン時は付与しない）。
+ * ログイン系エンドポイントは AuthN 対象外なので余分に付いても無害。
+ */
+api.use({
+  onRequest({ request }) {
+    const header = bearer(getAccessToken());
+    if (header) {
+      request.headers.set("Authorization", header);
+    }
+    return request;
+  },
 });
 
 // ---- openapi.json 由来のリクエスト型エイリアス ----
@@ -64,6 +87,15 @@ export type StartListenerRequest =
   components["schemas"]["StartListenerRequest"];
 export type StopListenerRequest = components["schemas"]["StopListenerRequest"];
 export type ListenerType = components["schemas"]["ListenerType"];
+
+/**
+ * /auth/login のレスポンス。
+ * openapi.json にレスポンススキーマが定義されていないため、
+ * サーバの AuthenticatedResponse に合わせて手動定義する。
+ */
+export type AuthenticatedResponse = {
+  access_token: string;
+};
 
 /**
  * /listener/list のレスポンス要素。
