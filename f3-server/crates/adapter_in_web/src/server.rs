@@ -25,6 +25,7 @@ pub async fn run(app_state: AppState) -> std::io::Result<()> {
             .allowed_origin("http://127.0.0.1:1420")
             .allowed_methods(vec!["GET", "POST"])
             .allowed_header(http::header::CONTENT_TYPE)
+            .allowed_header(http::header::AUTHORIZATION)
             .allowed_header(http::header::ACCEPT)
             .supports_credentials()
             .max_age(3600);

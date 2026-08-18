@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "app",
+    "title": "adapter_in_web",
     "description": "",
     "license": {
       "name": ""
@@ -9,23 +9,10 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/after-login/top": {
-      "get": {
-        "tags": [
-          "crate::handler::after_login_handler"
-        ],
-        "operationId": "after_login",
-        "responses": {
-          "200": {
-            "description": "テスト用"
-          }
-        }
-      }
-    },
     "/after-login/upload": {
       "post": {
         "tags": [
-          "crate::handler::file_upload_handler"
+          "crate::controller::file_upload_controller"
         ],
         "operationId": "upload_file",
         "requestBody": {
@@ -51,7 +38,7 @@
     "/auth/login": {
       "post": {
         "tags": [
-          "crate::handler::auth_handler"
+          "crate::controller::auth_controller"
         ],
         "operationId": "login",
         "requestBody": {
@@ -77,7 +64,7 @@
     "/auth/logout": {
       "post": {
         "tags": [
-          "crate::handler::auth_handler"
+          "crate::controller::auth_controller"
         ],
         "operationId": "logout",
         "responses": {
@@ -90,7 +77,7 @@
     "/health/db": {
       "get": {
         "tags": [
-          "crate::handler::health_handler"
+          "crate::controller::health_controller"
         ],
         "operationId": "health_check_db",
         "responses": {
@@ -106,7 +93,7 @@
     "/listener/create": {
       "post": {
         "tags": [
-          "crate::handler::listener_handler"
+          "crate::controller::listener_controller"
         ],
         "operationId": "create_listener",
         "requestBody": {
@@ -132,7 +119,7 @@
     "/listener/list": {
       "get": {
         "tags": [
-          "crate::handler::listener_handler"
+          "crate::controller::listener_controller"
         ],
         "operationId": "list_listeners",
         "responses": {
@@ -148,7 +135,7 @@
     "/listener/remove": {
       "post": {
         "tags": [
-          "crate::handler::listener_handler"
+          "crate::controller::listener_controller"
         ],
         "operationId": "remove_listener",
         "requestBody": {
@@ -174,7 +161,7 @@
     "/listener/start": {
       "post": {
         "tags": [
-          "crate::handler::listener_handler"
+          "crate::controller::listener_controller"
         ],
         "operationId": "start_listener",
         "requestBody": {
@@ -200,7 +187,7 @@
     "/listener/stop": {
       "post": {
         "tags": [
-          "crate::handler::listener_handler"
+          "crate::controller::listener_controller"
         ],
         "operationId": "stop_listener",
         "requestBody": {
@@ -222,45 +209,6 @@
           }
         }
       }
-    },
-    "/required-role-admin/admin": {
-      "get": {
-        "tags": [
-          "crate::handler::required_role_handler"
-        ],
-        "operationId": "admin",
-        "responses": {
-          "200": {
-            "description": "テスト用"
-          }
-        }
-      }
-    },
-    "/required-role-read/write": {
-      "get": {
-        "tags": [
-          "crate::handler::required_role_handler"
-        ],
-        "operationId": "read",
-        "responses": {
-          "200": {
-            "description": "テスト用"
-          }
-        }
-      }
-    },
-    "/required-role-write/write": {
-      "get": {
-        "tags": [
-          "crate::handler::required_role_handler"
-        ],
-        "operationId": "write",
-        "responses": {
-          "200": {
-            "description": "テスト用"
-          }
-        }
-      }
     }
   },
   "components": {
@@ -269,16 +217,13 @@
         "type": "object",
         "required": [
           "name",
-          "listener_type",
           "lhost",
-          "lport"
+          "lport",
+          "protocol"
         ],
         "properties": {
           "lhost": {
             "type": "string"
-          },
-          "listener_type": {
-            "$ref": "#/components/schemas/ListenerType"
           },
           "lport": {
             "type": "integer",
@@ -287,6 +232,9 @@
           },
           "name": {
             "type": "string"
+          },
+          "protocol": {
+            "$ref": "#/components/schemas/ListenerType"
           }
         }
       },
