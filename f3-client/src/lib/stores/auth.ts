@@ -1,25 +1,54 @@
-import { writable } from "svelte/store";
+import { derived } from "svelte/store";
 import { goto } from "$app/navigation";
-import { api, type OperatorCredential } from "$lib/api/client";
+import {
+  api,
+  type OperatorCredential,
+  type AuthenticatedResponse,
+} from "$lib/api/client";
+import {
+  accessToken,
+  setAccessToken,
+  clearAccessToken,
+} from "$lib/api/token";
+import { isValidToken } from "$lib/api/authHeader";
 
-/** 認証済みかどうか。SPA のメモリ上の状態として保持する。 */
-export const isAuthenticated = writable<boolean>(false);
+/**
+ * 認証済みかどうか。
+ * 認証状態はアクセストークンの有無で表す（トークンは localStorage に永続化）。
+ */
+export const isAuthenticated = derived(
+  accessToken,
+  ($token) => $token !== null,
+);
 
-/** ログイン。成功したらダッシュボードへ遷移する。 */
+/** ログイン。成功したらトークンを保存してダッシュボードへ遷移する。 */
 export async function login(credential: OperatorCredential): Promise<void> {
-  const { error, response } = await api.POST("/auth/login", {
+  const { data, error, response } = await api.POST("/auth/login", {
     body: credential,
   });
   if (error !== undefined || !response.ok) {
     throw new Error("ユーザー名またはパスワードが正しくありません");
   }
-  isAuthenticated.set(true);
+
+  // openapi.json にレスポンススキーマが無いため型は付かない。手動型で受ける。
+  const token = (data as AuthenticatedResponse | undefined)?.access_token;
+  if (!isValidToken(token)) {
+    throw new Error("サーバからアクセストークンを取得できませんでした");
+  }
+
+  setAccessToken(token);
   await goto("/dashboard/listeners");
 }
 
-/** ログアウト。ログイン画面へ遷移する。 */
+/** ログアウト。トークンを破棄してログイン画面へ遷移する。 */
 export async function logout(): Promise<void> {
-  await api.POST("/auth/logout");
-  isAuthenticated.set(false);
-  await goto("/");
+  try {
+    // サーバ側の失効処理を試みる（失敗してもクライアントの破棄は行う）。
+    await api.POST("/auth/logout");
+  } catch {
+    // ネットワークエラー等は無視してローカルの認証状態を確実に破棄する。
+  } finally {
+    clearAccessToken();
+    await goto("/");
+  }
 }
