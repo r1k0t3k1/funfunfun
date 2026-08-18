@@ -5,7 +5,7 @@ use crate::{
         outbound::c2_manager::C2Manager,
     },
 };
-use std::{net::{Ipv4Addr, SocketAddr}, sync::Arc};
+use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
 
 #[derive(Clone)]
@@ -27,12 +27,10 @@ impl ListenerUsecase for ListenerService {
         protocol: ListenerProtocol,
     ) -> Result<(), ListenerUsecaseError> {
         let mut c2_manager = self.c2_manager.lock().await;
-        log::info!("TEST1");
         let ipv4_addr = lhost.parse()
             .map_err(|e| ListenerUsecaseError::InvalidAddress)?;
         let addr = std::net::IpAddr::V4(ipv4_addr);
 
-        log::info!("TEST2");
         let socket_addr = SocketAddr::new(addr, lport);
         c2_manager.add_listener(name, socket_addr, protocol)
             .map_err(|e| ListenerUsecaseError::AddressAlreadyInUse)?;
@@ -59,59 +57,13 @@ impl ListenerUsecase for ListenerService {
         let mut c2_manager = self.c2_manager.lock().await;
         c2_manager.remove_listener(listener_id)
             .map_err(|e| ListenerUsecaseError::FailedToRemove)?;
-        todo!()
+        Ok(())
     }
 }
 
 impl ListenerService {
     pub fn new(c2_manager: Arc<Mutex<dyn C2Manager>>) -> Self {
         Self { c2_manager }
-    }
-
-    pub async fn create_listener(
-        &self,
-        listener_type: String,
-        lhost: String,
-        lport: u16,
-    ) -> Result<(), ListenerUsecaseError> {
-        //self.c2_manager.lock().await.add_listener(Listener::new())
-        //    .map_err(|e| UsecaseError::Unexpected(e.into()))
-        todo!()
-    }
-
-    pub async fn start_listener(
-        &self,
-        listener_id: ListenerId,
-    ) -> Result<(), ListenerUsecaseError> {
-        todo!()
-        //self.c2_manager
-        //    .lock()
-        //    .await
-        //    .start(listener_id)
-        //    .await
-        //    .map_err(|e| ListenerUsecaseError::Unexpected(e.into()))
-    }
-
-    pub async fn stop_listener(&self, listener_id: ListenerId) -> Result<(), ListenerUsecaseError> {
-        todo!()
-        //self.c2_manager
-        //    .lock()
-        //    .await
-        //    .stop(listener_id)
-        //    .await
-        //    .map_err(|e| ListenerUsecaseError::Unexpected(e.into()))
-    }
-
-    pub async fn remove_listener(
-        &self,
-        listener_id: ListenerId,
-    ) -> Result<(), ListenerUsecaseError> {
-        todo!()
-        //self.c2_manager
-        //    .lock()
-        //    .await
-        //    .remove_listener(listener_id)
-        //    .map_err(|e| ListenerUsecaseError::Unexpected(e.into()))
     }
 }
 
