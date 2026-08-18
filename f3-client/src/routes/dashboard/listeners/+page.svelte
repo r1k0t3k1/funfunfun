@@ -1,23 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    DataTable,
-    Toolbar,
-    ToolbarContent,
-    Button,
-    Modal,
-    TextInput,
-    NumberInput,
-    Select,
-    SelectItem,
-    OverflowMenu,
-    OverflowMenuItem,
-    InlineNotification,
-    InlineLoading,
-    Tag,
-  } from "carbon-components-svelte";
-  import Add from "carbon-icons-svelte/lib/Add.svelte";
-  import Renew from "carbon-icons-svelte/lib/Renew.svelte";
+  import Icon from "$lib/ui/Icon.svelte";
+  import Dialog from "$lib/ui/Dialog.svelte";
+  import Select from "$lib/ui/Select.svelte";
+  import RowMenu from "$lib/ui/RowMenu.svelte";
   import {
     listListeners,
     createListener,
@@ -27,7 +13,6 @@
   } from "$lib/api/listener";
   import type { ListenerListItem, ListenerType } from "$lib/api/client";
 
-  // ListenerListItem は id を持つため、そのまま DataTable の行として扱える。
   type Row = ListenerListItem;
 
   let rows = $state<Row[]>([]);
@@ -42,18 +27,16 @@
   let formLhost = $state("0.0.0.0");
   let formLport = $state(8080);
 
-  const headers = [
-    { key: "name", value: "名前" },
-    { key: "protocol", value: "種別" },
-    { key: "addr", value: "アドレス" },
-    { key: "overflow", empty: true },
-  ] as const;
+  const typeOptions = [
+    { value: "TCP", label: "TCP" },
+    { value: "HTTP", label: "HTTP" },
+    { value: "HTTPS", label: "HTTPS" },
+  ];
 
   async function refresh() {
     loading = true;
     errorMessage = "";
     try {
-      // サーバが返す id をそのまま識別子として使う（起動/停止/削除で利用）。
       rows = await listListeners();
     } catch (e) {
       errorMessage = e instanceof Error ? e.message : "取得に失敗しました";
@@ -69,7 +52,8 @@
     formLport = 8080;
   }
 
-  async function handleCreate() {
+  async function handleCreate(event: SubmitEvent) {
+    event.preventDefault();
     submitting = true;
     errorMessage = "";
     try {
@@ -102,118 +86,116 @@
   onMount(refresh);
 </script>
 
-<div class="listeners">
-  <div class="page-header">
-    <h1>Listener</h1>
-    <p>リスナーの作成・起動・停止・削除を行います。</p>
+<div class="page-header">
+  <h1>Listener</h1>
+  <p>リスナーの作成・起動・停止・削除を行います。</p>
+</div>
+
+{#if errorMessage}
+  <div class="notification error" role="alert">
+    <strong>エラー</strong>
+    <span>{errorMessage}</span>
+  </div>
+{/if}
+
+<div class="card">
+  <div class="table-toolbar">
+    <span class="muted">{rows.length} 件</span>
+    <div class="toolbar-actions">
+      <button class="btn btn-ghost btn-icon" onclick={refresh} aria-label="更新">
+        <Icon name="refresh" size={18} />
+      </button>
+      <button class="btn btn-primary" onclick={() => (createOpen = true)}>
+        <Icon name="plus" size={18} />
+        Listener を作成
+      </button>
+    </div>
   </div>
 
-  {#if errorMessage}
-    <InlineNotification
-      kind="error"
-      title="エラー"
-      subtitle={errorMessage}
-      lowContrast
-      on:close={() => (errorMessage = "")}
-    />
-  {/if}
-
-  <DataTable {headers} {rows}>
-    <Toolbar>
-      <ToolbarContent>
-        <Button
-          kind="ghost"
-          icon={Renew}
-          iconDescription="更新"
-          on:click={refresh}
-        />
-        <Button icon={Add} on:click={() => (createOpen = true)}>
-          Listener を作成
-        </Button>
-      </ToolbarContent>
-    </Toolbar>
-
-    <svelte:fragment slot="cell" let:row let:cell>
-      {#if cell.key === "overflow"}
-        <OverflowMenu flipped>
-          <OverflowMenuItem
-            text="起動"
-            on:click={() => runAction(startListener, row.id)}
-          />
-          <OverflowMenuItem
-            text="停止"
-            on:click={() => runAction(stopListener, row.id)}
-          />
-          <OverflowMenuItem
-            danger
-            text="削除"
-            on:click={() => runAction(removeListener, row.id)}
-          />
-        </OverflowMenu>
-      {:else if cell.key === "name"}
-        <Tag type="cool-gray">{cell.value}</Tag>
-      {:else if cell.key === "protocol"}
-        <Tag type="teal">{cell.value}</Tag>
-      {:else}
-        {cell.value}
-      {/if}
-    </svelte:fragment>
-  </DataTable>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>名前</th>
+        <th>種別</th>
+        <th>アドレス</th>
+        <th class="col-action"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {#each rows as row (row.id)}
+        <tr>
+          <td><span class="badge badge-gray">{row.name}</span></td>
+          <td><span class="badge badge-teal">{row.protocol}</span></td>
+          <td>{row.addr}</td>
+          <td class="col-action">
+            <RowMenu
+              actions={[
+                { label: "起動", onSelect: () => runAction(startListener, row.id) },
+                { label: "停止", onSelect: () => runAction(stopListener, row.id) },
+                { label: "削除", danger: true, onSelect: () => runAction(removeListener, row.id) },
+              ]}
+            />
+          </td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
 
   {#if loading}
-    <InlineLoading description="読み込み中..." />
+    <div class="empty">読み込み中...</div>
   {:else if rows.length === 0}
-    <p class="empty">Listener がありません。「Listener を作成」から追加してください。</p>
+    <div class="empty">
+      Listener がありません。「Listener を作成」から追加してください。
+    </div>
   {/if}
 </div>
 
-<Modal
-  bind:open={createOpen}
-  modalHeading="Listener を作成"
-  primaryButtonText={submitting ? "作成中..." : "作成"}
-  secondaryButtonText="キャンセル"
-  primaryButtonDisabled={submitting || formName.trim() === ""}
-  on:click:button--secondary={() => (createOpen = false)}
-  on:submit={handleCreate}
-  on:close={resetForm}
->
-  <div class="form-field">
-    <TextInput labelText="名前" placeholder="my-listener" bind:value={formName} required />
-  </div>
-  <div class="form-field">
-    <Select labelText="種別" bind:selected={formType}>
-      <SelectItem value="TCP" text="TCP" />
-      <SelectItem value="HTTP" text="HTTP" />
-      <SelectItem value="HTTPS" text="HTTPS" />
-    </Select>
-  </div>
-  <div class="form-field">
-    <TextInput labelText="LHOST" placeholder="0.0.0.0" bind:value={formLhost} required />
-  </div>
-  <div class="form-field">
-    <NumberInput labelText="LPORT" min={0} max={65535} bind:value={formLport} />
-  </div>
-</Modal>
+<Dialog bind:open={createOpen} title="Listener を作成">
+  <form id="create-listener-form" onsubmit={handleCreate}>
+    <label class="field">
+      <span class="field-label">名前</span>
+      <input class="input" placeholder="my-listener" bind:value={formName} required />
+    </label>
+    <div class="field">
+      <Select label="種別" options={typeOptions} bind:value={formType} />
+    </div>
+    <label class="field">
+      <span class="field-label">LHOST</span>
+      <input class="input" placeholder="0.0.0.0" bind:value={formLhost} required />
+    </label>
+    <label class="field">
+      <span class="field-label">LPORT</span>
+      <input
+        class="input"
+        type="number"
+        min="0"
+        max="65535"
+        bind:value={formLport}
+      />
+    </label>
+  </form>
+
+  {#snippet footer()}
+    <button class="btn" onclick={() => (createOpen = false)}>キャンセル</button>
+    <button
+      class="btn btn-primary"
+      type="submit"
+      form="create-listener-form"
+      disabled={submitting || formName.trim() === ""}
+    >
+      {submitting ? "作成中..." : "作成"}
+    </button>
+  {/snippet}
+</Dialog>
 
 <style>
-  .page-header {
-    margin-bottom: 1.5rem;
+  .field {
+    margin-bottom: 1.1rem;
   }
-
-  .page-header h1 {
-    margin-bottom: 0.25rem;
-  }
-
-  .page-header p {
-    color: var(--cds-text-secondary, #c6c6c6);
-  }
-
-  .form-field {
-    margin-bottom: 1.5rem;
-  }
-
-  .empty {
-    margin-top: 1rem;
-    color: var(--cds-text-secondary, #c6c6c6);
+  .field-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-dim);
   }
 </style>

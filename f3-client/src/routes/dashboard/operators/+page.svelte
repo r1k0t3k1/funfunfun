@@ -1,26 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    DataTable,
-    Toolbar,
-    ToolbarContent,
-    Button,
-    Modal,
-    OverflowMenu,
-    OverflowMenuItem,
-    InlineNotification,
-    InlineLoading,
-    Tag,
-    StructuredList,
-    StructuredListBody,
-    StructuredListRow,
-    StructuredListCell,
-  } from "carbon-components-svelte";
-  import Renew from "carbon-icons-svelte/lib/Renew.svelte";
+  import Icon from "$lib/ui/Icon.svelte";
+  import Dialog from "$lib/ui/Dialog.svelte";
+  import RowMenu from "$lib/ui/RowMenu.svelte";
   import { listOperators, getOperator } from "$lib/api/operator";
   import type { OperatorResponse, OperatorRole } from "$lib/api/client";
 
-  // OperatorResponse は id を持つため、そのまま DataTable の行として扱える。
   type Row = OperatorResponse;
 
   let rows = $state<Row[]>([]);
@@ -32,22 +17,15 @@
   let detailLoading = $state(false);
   let detail = $state<OperatorResponse | null>(null);
 
-  const headers = [
-    { key: "name", value: "名前" },
-    { key: "role", value: "ロール" },
-    { key: "description", value: "説明" },
-    { key: "overflow", empty: true },
-  ] as const;
-
-  // ロールごとに色を割り当てる（Admin=赤系, Write=青系, Read=グレー）。
-  function roleTagType(role: OperatorRole): "red" | "blue" | "cool-gray" {
+  // ロールごとにバッジ色を割り当てる（Admin=赤系, Write=青系, Read=グレー）。
+  function roleBadge(role: OperatorRole): string {
     switch (role) {
       case "Admin":
-        return "red";
+        return "badge-red";
       case "Write":
-        return "blue";
+        return "badge-blue";
       default:
-        return "cool-gray";
+        return "badge-gray";
     }
   }
 
@@ -82,107 +60,71 @@
   onMount(refresh);
 </script>
 
-<div class="operators">
-  <div class="page-header">
-    <h1>Operator</h1>
-    <p>サーバに登録されているオペレータの一覧と詳細を確認します。</p>
+<div class="page-header">
+  <h1>Operator</h1>
+  <p>サーバに登録されているオペレータの一覧と詳細を確認します。</p>
+</div>
+
+{#if errorMessage}
+  <div class="notification error" role="alert">
+    <strong>エラー</strong>
+    <span>{errorMessage}</span>
+  </div>
+{/if}
+
+<div class="card">
+  <div class="table-toolbar">
+    <span class="muted">{rows.length} 件</span>
+    <div class="toolbar-actions">
+      <button class="btn btn-ghost btn-icon" onclick={refresh} aria-label="更新">
+        <Icon name="refresh" size={18} />
+      </button>
+    </div>
   </div>
 
-  {#if errorMessage}
-    <InlineNotification
-      kind="error"
-      title="エラー"
-      subtitle={errorMessage}
-      lowContrast
-      on:close={() => (errorMessage = "")}
-    />
-  {/if}
-
-  <DataTable {headers} {rows}>
-    <Toolbar>
-      <ToolbarContent>
-        <Button
-          kind="ghost"
-          icon={Renew}
-          iconDescription="更新"
-          on:click={refresh}
-        />
-      </ToolbarContent>
-    </Toolbar>
-
-    <svelte:fragment slot="cell" let:row let:cell>
-      {#if cell.key === "overflow"}
-        <OverflowMenu flipped>
-          <OverflowMenuItem text="詳細" on:click={() => showDetail(row.id)} />
-        </OverflowMenu>
-      {:else if cell.key === "name"}
-        <Tag type="cool-gray">{cell.value}</Tag>
-      {:else if cell.key === "role"}
-        <Tag type={roleTagType(cell.value as OperatorRole)}>{cell.value}</Tag>
-      {:else if cell.key === "description"}
-        {cell.value || "—"}
-      {:else}
-        {cell.value}
-      {/if}
-    </svelte:fragment>
-  </DataTable>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>名前</th>
+        <th>ロール</th>
+        <th>説明</th>
+        <th class="col-action"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {#each rows as row (row.id)}
+        <tr>
+          <td><span class="badge badge-gray">{row.name}</span></td>
+          <td><span class="badge {roleBadge(row.role)}">{row.role}</span></td>
+          <td>{row.description || "—"}</td>
+          <td class="col-action">
+            <RowMenu actions={[{ label: "詳細", onSelect: () => showDetail(row.id) }]} />
+          </td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
 
   {#if loading}
-    <InlineLoading description="読み込み中..." />
+    <div class="empty">読み込み中...</div>
   {:else if rows.length === 0}
-    <p class="empty">オペレータが登録されていません。</p>
+    <div class="empty">オペレータが登録されていません。</div>
   {/if}
 </div>
 
-<Modal
-  bind:open={detailOpen}
-  passiveModal
-  modalHeading="オペレータ詳細"
-  on:close={() => (detail = null)}
->
+<Dialog bind:open={detailOpen} title="オペレータ詳細">
   {#if detailLoading}
-    <InlineLoading description="読み込み中..." />
+    <div class="empty">読み込み中...</div>
   {:else if detail}
-    <StructuredList>
-      <StructuredListBody>
-        <StructuredListRow>
-          <StructuredListCell head>ID</StructuredListCell>
-          <StructuredListCell>{detail.id}</StructuredListCell>
-        </StructuredListRow>
-        <StructuredListRow>
-          <StructuredListCell head>名前</StructuredListCell>
-          <StructuredListCell>{detail.name}</StructuredListCell>
-        </StructuredListRow>
-        <StructuredListRow>
-          <StructuredListCell head>ロール</StructuredListCell>
-          <StructuredListCell>
-            <Tag type={roleTagType(detail.role)}>{detail.role}</Tag>
-          </StructuredListCell>
-        </StructuredListRow>
-        <StructuredListRow>
-          <StructuredListCell head>説明</StructuredListCell>
-          <StructuredListCell>{detail.description || "—"}</StructuredListCell>
-        </StructuredListRow>
-      </StructuredListBody>
-    </StructuredList>
+    <dl class="detail-list">
+      <dt>ID</dt>
+      <dd>{detail.id}</dd>
+      <dt>名前</dt>
+      <dd>{detail.name}</dd>
+      <dt>ロール</dt>
+      <dd><span class="badge {roleBadge(detail.role)}">{detail.role}</span></dd>
+      <dt>説明</dt>
+      <dd>{detail.description || "—"}</dd>
+    </dl>
   {/if}
-</Modal>
-
-<style>
-  .page-header {
-    margin-bottom: 1.5rem;
-  }
-
-  .page-header h1 {
-    margin-bottom: 0.25rem;
-  }
-
-  .page-header p {
-    color: var(--cds-text-secondary, #c6c6c6);
-  }
-
-  .empty {
-    margin-top: 1rem;
-    color: var(--cds-text-secondary, #c6c6c6);
-  }
-</style>
+</Dialog>
