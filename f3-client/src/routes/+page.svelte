@@ -1,12 +1,5 @@
 <script lang="ts">
-  import {
-    Form,
-    TextInput,
-    PasswordInput,
-    Button,
-    InlineNotification,
-    Tile,
-  } from "carbon-components-svelte";
+  import Icon from "$lib/ui/Icon.svelte";
   import { login } from "$lib/stores/auth";
 
   let username = $state("");
@@ -29,42 +22,50 @@
 </script>
 
 <div class="login-page">
-  <Tile class="login-card">
-    <h2 class="login-title">f3 コンソール</h2>
-    <p class="login-subtitle">サインインして続行してください</p>
+  <div class="login-card">
+    <div class="brand">
+      <span class="brand-mark"><Icon name="terminal" size={22} /></span>
+      <div>
+        <h1 class="login-title">f3 コンソール</h1>
+        <p class="login-subtitle">サインインして続行してください</p>
+      </div>
+    </div>
 
     {#if errorMessage}
-      <InlineNotification
-        kind="error"
-        title="エラー"
-        subtitle={errorMessage}
-        lowContrast
-        hideCloseButton
-      />
+      <div class="notification error" role="alert">
+        <strong>エラー</strong>
+        <span>{errorMessage}</span>
+      </div>
     {/if}
 
-    <Form on:submit={handleSubmit}>
-      <div class="field">
-        <TextInput
-          labelText="ユーザー名"
+    <form onsubmit={handleSubmit}>
+      <label class="field">
+        <span class="field-label">ユーザー名</span>
+        <input
+          class="input"
+          type="text"
           placeholder="username"
+          autocomplete="username"
           bind:value={username}
           required
         />
-      </div>
-      <div class="field">
-        <PasswordInput
-          labelText="パスワード"
+      </label>
+      <label class="field">
+        <span class="field-label">パスワード</span>
+        <input
+          class="input"
+          type="password"
           placeholder="password"
+          autocomplete="current-password"
           bind:value={password}
           required
         />
-      </div>
-      <Button type="submit" disabled={submitting}>
+      </label>
+      <button class="btn btn-primary btn-block" type="submit" disabled={submitting}>
         {submitting ? "サインイン中..." : "サインイン"}
-      </Button>
-    </Form>
-  </Tile>
+      </button>
+    </form>
+  </div>
 </div>
 
 <style>
@@ -74,23 +75,63 @@
     align-items: center;
     justify-content: center;
     padding: 2rem;
+    background:
+      radial-gradient(
+        1200px 600px at 50% -10%,
+        rgba(68, 147, 248, 0.1),
+        transparent
+      ),
+      var(--bg);
   }
 
-  :global(.login-card) {
+  .login-card {
     width: 100%;
-    max-width: 24rem;
+    max-width: 22rem;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    flex-shrink: 0;
   }
 
   .login-title {
-    margin-bottom: 0.25rem;
+    font-size: 1.15rem;
+    font-weight: 650;
   }
 
   .login-subtitle {
-    margin-bottom: 1.5rem;
-    color: var(--cds-text-secondary, #c6c6c6);
+    color: var(--text-dim);
+    font-size: 0.85rem;
   }
 
   .field {
-    margin-bottom: 1.5rem;
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .field-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-dim);
   }
 </style>
