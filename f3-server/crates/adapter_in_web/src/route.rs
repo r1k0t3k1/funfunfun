@@ -6,7 +6,7 @@ use crate::{
         health_controller::health_check_db,
         listener_controller::{
             create_listener, list_listeners, remove_listener, start_listener, stop_listener,
-        },
+        }, operator_controller::{get_operator, list_operators},
     },
     middleware::authn_middleware::AuthN,
     state::AppState,
@@ -46,6 +46,12 @@ pub fn configure_route(state: web::Data<AppState>) -> impl FnOnce(&mut web::Serv
                             .show_files_listing()
                             .use_hidden_files(),
                     ),
+            )
+            .service(
+                web::scope("/operator")
+                .wrap(AuthN)
+                .service(list_operators)
+                .service(get_operator)
             );
     }
 }

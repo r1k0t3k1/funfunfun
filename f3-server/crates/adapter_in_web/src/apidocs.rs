@@ -12,6 +12,8 @@ use utoipa_swagger_ui::SwaggerUi;
     crate::controller::listener_controller::stop_listener,
     crate::controller::listener_controller::remove_listener,
     crate::controller::file_upload_controller::upload_file,
+    crate::controller::operator_controller::list_operators,
+    crate::controller::operator_controller::get_operator,
 ))]
 struct ApiDoc;
 

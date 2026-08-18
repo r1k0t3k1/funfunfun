@@ -216,6 +216,42 @@
           }
         }
       }
+    },
+    "/operator/get": {
+      "post": {
+        "tags": [
+          "crate::controller::operator_controller"
+        ],
+        "operationId": "get_operator",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetOperatorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "オペレータ詳細情報"
+          }
+        }
+      }
+    },
+    "/operator/list": {
+      "post": {
+        "tags": [
+          "crate::controller::operator_controller"
+        ],
+        "operationId": "list_operators",
+        "responses": {
+          "200": {
+            "description": "オペレータ一覧"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -242,6 +278,17 @@
           },
           "protocol": {
             "$ref": "#/components/schemas/ListenerType"
+          }
+        }
+      },
+      "GetOperatorRequest": {
+        "type": "object",
+        "required": [
+          "operator_id"
+        ],
+        "properties": {
+          "operator_id": {
+            "type": "string"
           }
         }
       },

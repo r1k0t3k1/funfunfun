@@ -1,3 +1,4 @@
+use application::domain::model::role_model::Role;
 use sqlx::PgPool;
 
 use application::domain::model::operator_model::Operator;
@@ -38,6 +39,62 @@ impl OperatorRepository for OperatorRepositoryImpl {
         .fetch_optional(&self.connection)
         .await
         .map(|ooe| ooe.map(|oe| oe.into()))
+        .map_err(|e| RepositoryError::Infrastructure(e.into()))
+    }
+
+    async fn list(&self) -> Result<Vec<Operator>, RepositoryError> {
+        sqlx::query_as!(
+            OperatorEntity,
+            r#"SELECT 
+                  operator_id,
+                  name,
+                  description,
+                  created_at,
+                  updated_at,
+                  role AS "role: RoleEntity"
+              FROM operators
+            "#
+        )
+        .fetch_all(&self.connection)
+        .await
+        .map(|oes| oes.iter().map(|oe| oe.clone().into()).collect())
+        .map_err(|e| RepositoryError::Infrastructure(e.into()))
+    }
+
+    async fn insert(
+        &self,
+        id: String,
+        password: String,
+        name: String,
+        description: String,
+        role: Role,
+    ) -> Result<Operator, RepositoryError> {
+        sqlx::query_as!(
+            OperatorEntity,
+            r#"INSERT INTO operators (operator_id, password_hash, name, description, role)
+               VALUES (
+                    $1,
+                    crypt($2, gen_salt('bf')),
+                    $3,
+                    $4,
+                    $5
+               ) RETURNING 
+                operator_id,
+                name,
+                description, 
+                role AS "role: RoleEntity",
+                created_at,
+                updated_at; 
+            "#,
+            id.into(),
+            password,
+            name,
+            description,
+            role.to_string(),
+        ) 
+        .fetch_one(&self.connection)
+        .await
+        .map(|oe| oe.into())
         .map_err(|e| RepositoryError::Infrastructure(e.into()))
     }
 

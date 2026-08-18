@@ -8,6 +8,11 @@ use utoipa::ToSchema;
 use crate::{dto::role_dto::Role, error::ApiError};
 
 #[derive(Deserialize, ToSchema)]
+pub struct GetOperatorRequest {
+    pub operator_id: String,
+}
+
+#[derive(Deserialize, ToSchema)]
 pub struct OperatorCredential {
     pub username: String,
     pub password: String,
@@ -46,5 +51,24 @@ impl FromRequest for AuthOperator {
         let request = req.clone();
         let operator = request.extensions().get::<AuthOperator>().cloned();
         Box::pin(async move { operator.ok_or_else(|| ApiError::Unauthorized) })
+    }
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct OperatorResponse {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub role: String,
+}
+
+impl From<Operator> for OperatorResponse {
+    fn from(value: Operator) -> Self {
+        Self {
+            id: value.operator_id,
+            name: value.name,
+            description: value.description.unwrap_or("".to_string()),
+            role: value.role.to_string(),
+        }
     }
 }
