@@ -1,0 +1,21 @@
+[package]
+name = "adapter_out_c2"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+application = { workspace = true }
+util = { workspace = true }
+
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+hyper = { workspace = true }
+hyper-util = { workspace = true }
+http-body-util = { workspace = true }
+async-trait = { workspace = true }
+anyhow = { workspace = true }
+uuid = { workspace = true }
+log = { workspace = true }
+rust-crypto = { workspace = true }
+serde = { workspace = true }
+rand = { workspace = true }

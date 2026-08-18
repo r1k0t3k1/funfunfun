@@ -1,12 +1,15 @@
 [workspace]
 resolver = "2"
 members = [
-    "domain",
-    "usecase",
-    "infrastructure",
-    "app",
+    "entrypoint",
+    "crates/util",
+    "crates/application",
+    "crates/adapter_in_web", 
+    "crates/adapter_out_persistence", 
+    "crates/adapter_out_c2", 
 ]
-default-members = ["app"]
+default-members = ["entrypoint"]
+exclude = ["test-tools"]
 
 [workspace.package]
 name = "f3-server"
@@ -26,10 +29,12 @@ utoipa-swagger-ui = { version = "9", features = ["actix-web", "reqwest"] }
 env_logger = { version = "0.11.11" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0" }
+serde_cbor = { version = "0.10" }
 anyhow = { version = "1.0" }
 thiserror = { version = "2.0.19" }
 log = { version = "0.4" }
 async-trait = { version = "0.1.91"}
+futures = { version = "0.3" }
 futures-util = { version = "0.3" }
 base64 = { version = "0.23.0" }
 tokio = { version = "1", features = ["full"] }
@@ -40,10 +45,15 @@ http-body-util = { version = "0.1" }
 bytes = { version = "1.12.1" }
 uuid = { version = "1.24.0", features = ["v4"] }
 x25519-dalek = { version = "3.0.0", features = ["getrandom"]}
+rust-crypto = { version = "0.2.36" }
+rand = { version = "0.10" }
+regex = { version = "1.13" }
 
-domain = { path = "domain" }
-usecase = { path = "usecase" }
-infrastructure = { path = "infrastructure" }
+util = { path = "crates/util" }
+application = { path = "crates/application" }
+adapter_in_web= { path = "crates/adapter_in_web" }
+adapter_out_persistence= { path = "crates/adapter_out_persistence" }
+adapter_out_c2= { path = "crates/adapter_out_c2" }
 
 [profile.release]
 lto = true
