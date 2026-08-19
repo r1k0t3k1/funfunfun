@@ -2,7 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%sveltekit.assets%/favicon.png" />
+    <!-- SVG 版はブラウザの配色設定に追従する。非対応ブラウザ用に .ico を残す。 -->
+    <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="%sveltekit.assets%/favicon.ico" sizes="any" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tauri + SvelteKit + Typescript App</title>
     %sveltekit.head%

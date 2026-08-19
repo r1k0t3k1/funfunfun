@@ -3,6 +3,7 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import Icon from "$lib/ui/Icon.svelte";
+  import Logo from "$lib/ui/Logo.svelte";
   import { logout } from "$lib/stores/auth";
   import { getAccessToken } from "$lib/api/token";
 
@@ -34,7 +35,7 @@
   -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <span class="brand-mark"><Icon name="terminal" size={18} /></span>
+      <span class="brand-mark"><Logo size={20} /></span>
       <div class="brand-text">
         <span class="brand-name">f3</span>
         <span class="brand-sub">Console</span>

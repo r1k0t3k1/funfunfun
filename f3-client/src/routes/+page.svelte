@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Icon from "$lib/ui/Icon.svelte";
+  import Logo from "$lib/ui/Logo.svelte";
   import { login } from "$lib/stores/auth";
 
   let username = $state("");
@@ -24,7 +24,7 @@
 <div class="login-page">
   <div class="login-card">
     <div class="brand">
-      <span class="brand-mark"><Icon name="terminal" size={22} /></span>
+      <span class="brand-mark"><Logo size={26} /></span>
       <div>
         <h1 class="login-title">f3 コンソール</h1>
         <p class="login-subtitle">サインインして続行してください</p>

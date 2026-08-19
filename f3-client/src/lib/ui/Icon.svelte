@@ -11,8 +11,7 @@
     | "logout"
     | "chevron-down"
     | "close"
-    | "check"
-    | "terminal";
+    | "check";
 
   let { name, size = 18 }: { name: IconName; size?: number } = $props();
 
@@ -32,7 +31,6 @@
     "chevron-down": '<path d="M6 9l6 6 6-6"/>',
     close: '<path d="M18 6 6 18M6 6l12 12"/>',
     check: '<path d="M20 6 9 17l-5-5"/>',
-    terminal: '<path d="M4 17l6-6-6-6M12 19h8"/>',
   };
 </script>
 
