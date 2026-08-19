@@ -26,7 +26,7 @@
     <div class="brand">
       <span class="brand-mark"><Logo size={26} /></span>
       <div>
-        <h1 class="login-title">f3 コンソール</h1>
+        <h1 class="login-title">Fun Fun Fun</h1>
         <p class="login-subtitle">サインインして続行してください</p>
       </div>
     </div>
@@ -110,15 +110,19 @@
     margin-bottom: 1.5rem;
   }
 
+  /*
+    ロゴは塗りタイルを敷かず、背景を透過させてマーク単体で見せる。
+    Logo.svelte は currentColor で描くので、タイルの色だった --accent を
+    そのままマークの色に移して視認性を保つ。
+  */
   .brand-mark {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 2.5rem;
     height: 2.5rem;
-    border-radius: var(--radius);
-    background: var(--accent);
-    color: var(--accent-contrast);
+    background: transparent;
+    color: var(--accent);
     flex-shrink: 0;
   }
 

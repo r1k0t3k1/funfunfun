@@ -37,7 +37,7 @@
     <div class="sidebar-brand">
       <span class="brand-mark"><Logo size={20} /></span>
       <div class="brand-text">
-        <span class="brand-name">f3</span>
+        <span class="brand-name">Fun Fun Fun</span>
         <span class="brand-sub">Console</span>
       </div>
     </div>
@@ -150,21 +150,24 @@
   .sidebar:focus-within .sidebar-brand {
     justify-content: flex-start;
   }
+  /* 背景タイルなしでマーク単体を見せる（ログイン画面の .brand-mark と同じ扱い） */
   .brand-mark {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border-radius: var(--radius);
-    background: var(--accent);
-    color: var(--accent-contrast);
+    background: transparent;
+    color: var(--accent);
     flex-shrink: 0;
   }
   .brand-text {
     display: none;
     flex-direction: column;
     line-height: 1.2;
+    /* ブランド名が「Fun Fun Fun」と長くなったので、展開アニメーションの
+       途中（サイドバーがまだ細い間）に折り返さないよう固定する。 */
+    white-space: nowrap;
   }
   .sidebar:hover .brand-text,
   .sidebar:focus-within .brand-text {
