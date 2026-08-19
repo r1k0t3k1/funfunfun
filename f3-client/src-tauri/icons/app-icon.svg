@@ -1,0 +1,29 @@
+<!--
+  デスクトップアプリアイコンの原本。static/favicon.svg と同一のロゴマークを使う。
+  favicon と違い OS のドック/タスクバー/ランチャー上に置かれ、背景色が
+  ライト/ダークどちらにもなり得るため、prefers-color-scheme では追従できない。
+  そのため SVG 内の 2 色（濃紺 #1F2233 / オフホワイト #F5F6FA）をそのまま使って
+  「濃紺のタイル + オフホワイトのマーク」に固定する。
+  ここから `npm run tauri icon src-tauri/icons/app-icon.svg` で各サイズを生成する。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect x="-64" y="-64" width="640" height="640" fill="white"/>
+      <path d="M262 150 L301 391.7 L200 474 Z"
+            fill="none" stroke="black" stroke-width="24" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+
+  <!-- タイル。角丸は 1024 に対して 180 (≒17.6%) -->
+  <rect x="0" y="0" width="1024" height="1024" rx="180" ry="180" fill="#1F2233"/>
+
+  <!-- マーク。実寸のバウンディングボックスは x 106..406 / y 52.5..448.5 なので
+       その中心 (256, 250.5) を原点に合わせてから 1.667 倍し、上下に約 18% の余白を残す。 -->
+  <g transform="translate(512,512) scale(1.667) translate(-256,-250.5)">
+    <g transform="translate(0,-25.5)">
+      <circle cx="256" cy="228" r="124" fill="none" stroke="#F5F6FA" stroke-width="52" mask="url(#cut)"/>
+      <path d="M262 150 L301 391.7 L200 474 Z" fill="#F5F6FA"/>
+    </g>
+  </g>
+</svg>
