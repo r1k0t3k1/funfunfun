@@ -13,6 +13,9 @@ Tauri v2 + SvelteKit(TypeScript) 製デスクトップアプリ。
 4. `npm run lint && npm run test` を通す
 5. `npm run dev:web` でフロントを起動し、Playwright MCP で実際に UI を操作して
    新機能・変更機能が動くことを確認(スクリーンショットも撮る)
+   - スクショはリポジトリ直下の `.cc-shots/<YYYY-MM-DD>-<作業内容>/` に
+     セッション単位で保存する(例: `.cc-shots/2026-08-19-logo/01-login.png`)。
+     ファイル名は `NN-画面名.png` の連番。gitignore 済みでコミットはしない
 6. コミットして PR を作成 (`gh pr create`)。本文にテスト結果とスクショの要約を書く
 
 # 制約
