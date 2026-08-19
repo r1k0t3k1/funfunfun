@@ -35,7 +35,7 @@
   -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <span class="brand-mark"><Logo size={20} /></span>
+      <span class="brand-mark"><Logo size={24} /></span>
       <div class="brand-text">
         <span class="brand-name">f3</span>
         <span class="brand-sub">Console</span>
@@ -150,15 +150,15 @@
   .sidebar:focus-within .sidebar-brand {
     justify-content: flex-start;
   }
+  /* ロゴ背景は透過。色は本文色に追従（+page.svelte 側と同じ扱い） */
   .brand-mark {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border-radius: var(--radius);
-    background: var(--accent);
-    color: var(--accent-contrast);
+    background: transparent;
+    color: var(--text);
     flex-shrink: 0;
   }
   .brand-text {

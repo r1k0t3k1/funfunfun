@@ -24,7 +24,7 @@
 <div class="login-page">
   <div class="login-card">
     <div class="brand">
-      <span class="brand-mark"><Logo size={26} /></span>
+      <span class="brand-mark"><Logo size={32} /></span>
       <div>
         <h1 class="login-title">f3 コンソール</h1>
         <p class="login-subtitle">サインインして続行してください</p>
@@ -110,15 +110,19 @@
     margin-bottom: 1.5rem;
   }
 
+  /*
+    ロゴは塗りタイルに載せず、背景を透過させてマークだけを見せる。
+    色は本文色に追従させる（Logo.svelte の既定 currentColor）ので、
+    favicon のダークテーマ版やアプリアイコンと同じオフホワイトになる。
+  */
   .brand-mark {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 2.5rem;
     height: 2.5rem;
-    border-radius: var(--radius);
-    background: var(--accent);
-    color: var(--accent-contrast);
+    background: transparent;
+    color: var(--text);
     flex-shrink: 0;
   }
 
