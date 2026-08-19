@@ -17,7 +17,6 @@ pub trait ListenerPort: Send + Sync {
     fn protocol(&self) -> ListenerProtocol;
     fn listener_model(&self) -> ListenerModel;
     fn set_join_handle(&mut self, join_handle: JoinHandle<()>);
-    fn set_cancel_token(&mut self, cancel_token: CancellationToken);
     fn get_cancel_token(&mut self) -> CancellationToken;
     fn list_agents(&self) -> Vec<Agent>;
     fn add_agents(&mut self, agent: Agent) -> anyhow::Result<()>;

@@ -1,0 +1,9 @@
+[package]
+name = "hash_password"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+adapter_out_persistence= { path = "../../crates/adapter_out_persistence" }
+application= { path = "../../crates/application" }
+rpassword = "7"

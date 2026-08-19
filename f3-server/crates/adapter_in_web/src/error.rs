@@ -1,15 +1,22 @@
 use actix_web::HttpResponse;
+use actix_web::http::StatusCode;
 use actix_web::{error::ResponseError, mime};
 use application::port::inbound::error::AuthUsecaseError;
+use serde::Serialize;
 use std::fmt::Display;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, Serialize, thiserror::Error)]
 pub enum ApiError {
     BadRequest,
     Unauthorized,
     Forbidden,
     NotFound,
     InternelServerError,
+}
+
+#[derive(Debug, Serialize)]
+struct ErrorResponse {
+    error: ApiError
 }
 
 impl Display for ApiError {
@@ -26,18 +33,29 @@ impl Display for ApiError {
 
 impl ResponseError for ApiError {
     fn status_code(&self) -> actix_web::http::StatusCode {
-        actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
+        match self {
+            ApiError::BadRequest => StatusCode::BAD_REQUEST,
+            ApiError::Unauthorized => StatusCode::UNAUTHORIZED,
+            ApiError::Forbidden => StatusCode::FORBIDDEN,
+            ApiError::NotFound => StatusCode::NOT_FOUND,
+            ApiError::InternelServerError => StatusCode::INTERNAL_SERVER_ERROR,
+        }
     }
 
     fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
         HttpResponse::build(self.status_code())
             .content_type(mime::APPLICATION_JSON)
-            .body(self.to_string())
+            .json(ErrorResponse { error: self.clone() })
     }
 }
 
 impl From<AuthUsecaseError> for ApiError {
     fn from(value: AuthUsecaseError) -> Self {
-        ApiError::InternelServerError // TODO
+        match value {
+            AuthUsecaseError::AuthenticationFailed |
+            AuthUsecaseError::SessionExpired => ApiError::Unauthorized,
+            AuthUsecaseError::Unexpected(e) => ApiError::InternelServerError,
+            AuthUsecaseError::Domain(e) => ApiError::BadRequest,
+        }
     }
 }

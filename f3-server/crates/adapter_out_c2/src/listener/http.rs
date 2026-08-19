@@ -189,10 +189,6 @@ impl ListenerPort for HttpListener {
     fn set_join_handle(&mut self, join_handle: JoinHandle<()>) {
         self.join_handle = Some(join_handle);
     }
-
-    fn set_cancel_token(&mut self, cancel_token: CancellationToken) {
-        self.cancel_token = cancel_token;
-    }
     
     // TODO cancel_tokenを外から使う必要あるか？
     fn get_cancel_token(&mut self) -> CancellationToken {

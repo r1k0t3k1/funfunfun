@@ -13,6 +13,12 @@ pub struct GetOperatorRequest {
 }
 
 #[derive(Deserialize, ToSchema)]
+pub struct UpdatePasswordRequest {
+    pub current_password: String,
+    pub new_password: String,
+}
+
+#[derive(Deserialize, ToSchema)]
 pub struct OperatorCredential {
     pub username: String,
     pub password: String,

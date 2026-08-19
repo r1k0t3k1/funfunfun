@@ -8,3 +8,9 @@ pub enum RepositoryError {
     #[error("infrastructure failure")]
     Infrastructure(#[source] Box<dyn std::error::Error + Send + Sync>),
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum HashError {
+    #[error("password hashing failed")]
+    HashingFailed,
+}

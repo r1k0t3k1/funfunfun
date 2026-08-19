@@ -3,6 +3,7 @@ use std::sync::Arc;
 use adapter_in_web::server::run;
 use adapter_in_web::state::AppState;
 use adapter_out_c2::c2_manager::C2ManagerImpl;
+use adapter_out_persistence::password_hasher_impl::Argon2PasswordHasher;
 use adapter_out_persistence::repository::operator_repository_impl::OperatorRepositoryImpl;
 use adapter_out_persistence::repository::session_repository_impl::SessionRepositoryImpl;
 use application::domain::service::auth_service::AuthService;
@@ -28,10 +29,12 @@ async fn main() -> std::io::Result<()> {
     let connection = PgPool::connect_lazy_with(options);
     let operator_repository_impl = Arc::new(OperatorRepositoryImpl::new(connection.clone()));
     let session_repository_impl = Arc::new(SessionRepositoryImpl::new(connection));
+    let password_hasher = Arc::new(Argon2PasswordHasher::new());
 
     let auth_service = Arc::new(AuthService::new(
         operator_repository_impl.clone(),
         session_repository_impl.clone(),
+        password_hasher.clone(),
     ));
 
     let c2_manager = Arc::new(Mutex::new(C2ManagerImpl::new()));

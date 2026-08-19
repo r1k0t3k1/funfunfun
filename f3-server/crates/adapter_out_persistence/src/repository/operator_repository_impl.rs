@@ -1,3 +1,4 @@
+use application::domain::model::password_model::HashedPassword;
 use application::domain::model::role_model::Role;
 use sqlx::PgPool;
 
@@ -27,10 +28,12 @@ impl OperatorRepository for OperatorRepositoryImpl {
             r#"SELECT 
                   operator_id,
                   name,
+                  password_hash,
                   description,
                   created_at,
                   updated_at,
-                  role AS "role: RoleEntity"
+                  role AS "role: RoleEntity",
+                  version
               FROM operators
               WHERE operator_id = $1
             "#,
@@ -48,10 +51,12 @@ impl OperatorRepository for OperatorRepositoryImpl {
             r#"SELECT 
                   operator_id,
                   name,
+                  password_hash,
                   description,
                   created_at,
                   updated_at,
-                  role AS "role: RoleEntity"
+                  role AS "role: RoleEntity",
+                  version
               FROM operators
             "#
         )
@@ -64,7 +69,7 @@ impl OperatorRepository for OperatorRepositoryImpl {
     async fn insert(
         &self,
         id: String,
-        password: String,
+        password_hash: String,
         name: String,
         description: String,
         role: Role,
@@ -74,20 +79,22 @@ impl OperatorRepository for OperatorRepositoryImpl {
             r#"INSERT INTO operators (operator_id, password_hash, name, description, role)
                VALUES (
                     $1,
-                    crypt($2, gen_salt('bf')),
+                    $2,
                     $3,
                     $4,
                     $5
                ) RETURNING 
                 operator_id,
                 name,
+                password_hash,
                 description, 
                 role AS "role: RoleEntity",
+                version,
                 created_at,
                 updated_at; 
             "#,
             id.into(),
-            password,
+            password_hash,
             name,
             description,
             role.to_string(),
@@ -98,57 +105,38 @@ impl OperatorRepository for OperatorRepositoryImpl {
         .map_err(|e| RepositoryError::Infrastructure(e.into()))
     }
 
-    async fn find_by_credential(
+    async fn save(
         &self,
-        operator_id: String,
-        password: String,
-    ) -> Result<Option<Operator>, RepositoryError> {
-        let mut tx = self
-            .connection
-            .begin()
-            .await
-            .map_err(|e| RepositoryError::Infrastructure(e.into()))?;
-
-        let operator = sqlx::query_as!(
+        operator: Operator,
+    ) -> Result<Operator, RepositoryError> {
+        sqlx::query_as!(
             OperatorEntity,
-            r#"SELECT 
-                  operator_id,
-                  name,
-                  description,
-                  role AS "role: RoleEntity",
-                  created_at,
-                  updated_at
-              FROM operators
-              WHERE operator_id = $1
+            r#"UPDATE operators
+               SET operator_id = $1,
+                   password_hash = $2,
+                   name = $3,
+                   description = $4,
+                   role = $5
+               RETURNING 
+                operator_id,
+                name,
+                password_hash,
+                description, 
+                role AS "role: RoleEntity",
+                version,
+                created_at,
+                updated_at; 
             "#,
-            operator_id.into(),
-        )
-        .fetch_optional(&mut *tx)
+            operator.operator_id.into(),
+            operator.password_hash,
+            operator.name,
+            operator.description,
+            operator.role.to_string(),
+        ) 
+        .fetch_one(&self.connection)
         .await
-        .map_err(|e| RepositoryError::Infrastructure(e.into()))?
-        .ok_or_else(|| RepositoryError::NotFound)?;
+        .map(|oe| oe.into())
+        .map_err(|e| RepositoryError::Infrastructure(e.into()))
 
-        let is_password_match: bool = sqlx::query_scalar!(
-            r#"SELECT
-                   (password_hash = crypt($1, password_hash)) AS password_match 
-               FROM operators
-               WHERE operator_id = $2;
-            "#,
-            password.into(),
-            operator.operator_id,
-        )
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(|e| RepositoryError::Infrastructure(e.into()))?
-        .unwrap_or(false);
-
-        tx.commit()
-            .await
-            .map_err(|e| RepositoryError::Infrastructure(e.into()))?;
-
-        match is_password_match {
-            true => Ok(Some(operator.into())),
-            false => Err(RepositoryError::NotFound),
-        }
     }
 }

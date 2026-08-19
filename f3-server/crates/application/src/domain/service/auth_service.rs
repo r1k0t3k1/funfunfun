@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
 use crate::{
-    domain::model::{operator_model::Operator, session_model::Session},
+    domain::model::{operator_model::Operator, password_model::RawPassword, session_model::Session},
     port::{
         inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError},
         outbound::{
-            error::RepositoryError, operator_repository::OperatorRepository,
-            session_repository::SessionRepository,
+            error::RepositoryError, operator_repository::OperatorRepository, password_hasher::{self, PasswordHasherTrait}, session_repository::SessionRepository
         },
     },
 };
@@ -15,16 +14,19 @@ use crate::{
 pub struct AuthService {
     operator_repository: Arc<dyn OperatorRepository>,
     session_repository: Arc<dyn SessionRepository>,
+    password_hasher: Arc<dyn PasswordHasherTrait>,
 }
 
 impl AuthService {
     pub fn new(
         operator_repository: Arc<dyn OperatorRepository>,
         session_repository: Arc<dyn SessionRepository>,
+        password_hasher: Arc<dyn PasswordHasherTrait>,
     ) -> Self {
         Self {
             operator_repository,
             session_repository,
+            password_hasher,
         }
     }
 }
@@ -36,9 +38,15 @@ impl AuthUsecase for AuthService {
         operator_id: String,
         password: String,
     ) -> Result<Session, AuthUsecaseError> {
+        // ユーザ列挙防止のため最初にハッシュ化
+        let password_hash = self.password_hasher
+            .clone()
+            .hash(&RawPassword::new(password).map_err(|e| AuthUsecaseError::AuthenticationFailed)?)
+            .map_err(|e| AuthUsecaseError::AuthenticationFailed)?;
+
         let operator = self
             .operator_repository
-            .find_by_credential(operator_id.into(), password.into())
+            .find_by_id(operator_id)
             .await
             .map_err(|e| {
                 log::error!("{e}");
@@ -48,6 +56,10 @@ impl AuthUsecase for AuthService {
                 }
             })?
             .ok_or(AuthUsecaseError::AuthenticationFailed)?;
+        
+        if !operator.verify_password(password_hash) {
+           return Err(AuthUsecaseError::AuthenticationFailed) 
+        }
 
         self.session_repository
             .insert(operator.operator_id)

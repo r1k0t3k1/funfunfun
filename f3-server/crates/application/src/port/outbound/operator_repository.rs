@@ -13,9 +13,8 @@ pub trait OperatorRepository: Send + Sync {
         role: Role,
     ) -> Result<Operator, RepositoryError>;
 
-    async fn find_by_credential(
+    async fn save(
         &self,
-        operator_id: String,
-        password: String,
-    ) -> Result<Option<Operator>, RepositoryError>;
+        operator: Operator,
+    ) -> Result<Operator, RepositoryError>;
 }

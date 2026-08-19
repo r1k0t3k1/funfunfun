@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    domain::model::{operator_model::{OperatorId, Operator}, role_model::Role, session_model::Session},
+    domain::model::{operator_model::{OperatorId, Operator}, role_model::Role},
     port::{
         inbound::{error::OperatorUsecaseError, operator_usecase::OperatorUsecase},
         outbound::{
@@ -77,7 +77,13 @@ impl OperatorUsecase for OperatorService {
         current_password: String,
         new_password: String
     ) -> Result<(), OperatorUsecaseError> {
-        todo!()
+        let operator = self.operator_repository.find_by_id(operator_id)
+            .await
+            .map_err(|e| OperatorUsecaseError::RepositoryError(e.into()))?
+            .ok_or_else(|| OperatorUsecaseError::OperatorNotFound)?;
+        
+            
+        Ok(())
     }
 }
 

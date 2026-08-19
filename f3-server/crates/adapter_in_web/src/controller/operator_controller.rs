@@ -1,5 +1,4 @@
-use crate::dto::auth_dto::AuthenticatedResponse;
-use crate::dto::operator_dto::{GetOperatorRequest, OperatorResponse};
+use crate::dto::operator_dto::{AuthOperator, GetOperatorRequest, OperatorResponse, UpdatePasswordRequest};
 use crate::state::AppState;
 use crate::error::ApiError;
 use actix_web::{HttpResponse, post, web};
@@ -42,4 +41,32 @@ pub async fn get_operator(
         .map(|o| Into::<OperatorResponse>::into(o))?;
 
     Ok(HttpResponse::Ok().json(operator))
+}
+
+#[utoipa::path(
+    context_path = "/operator",
+    responses(
+        (status = 200, description = "パスワード変更完了"),
+    )
+)]
+#[post("/update_password")]
+pub async fn update_password(
+    state: web::Data<AppState>,
+    auth_operator: web::ReqData<AuthOperator>,
+    request: web::Json<UpdatePasswordRequest>,
+) -> Result<HttpResponse, ApiError> {
+    let operator_id = auth_operator.operator_id.clone();
+    let current_password = request.current_password.clone();
+    let new_password = request.new_password.clone();
+
+    let res = state.operator_usecase.change_password(
+       operator_id,
+       current_password,
+       new_password,
+    )
+        .await
+        .map(|_| HttpResponse::Ok().finish())
+        .map_err(|e| ApiError::BadRequest)?;
+
+    Ok(res)
 }
