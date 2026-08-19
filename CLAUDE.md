@@ -16,7 +16,16 @@ Tauri v2 + SvelteKit(TypeScript) 製デスクトップアプリ。
    - スクショはリポジトリ直下の `.cc-shots/<YYYY-MM-DD>-<作業内容>/` に
      セッション単位で保存する(例: `.cc-shots/2026-08-19-logo/01-login.png`)。
      ファイル名は `NN-画面名.png` の連番。gitignore 済みでコミットはしない
+   - スクショを添付・提示するときはフォルダやワイルドカードを直接指定しない。
+     `ls .cc-shots/<YYYY-MM-DD>-<作業内容>/*.png` で配下の `*.png` を列挙し、
+     連番順に 1 ファイルずつフルパスで個別に添付する
+     - NG: `.cc-shots/2026-08-19-logo/` / `.cc-shots/2026-08-19-logo/*.png`
+       / `.cc-shots/logo-0{1..6}-*.png`
+     - OK: `.cc-shots/2026-08-19-logo/01-login.png`,
+       `.cc-shots/2026-08-19-logo/02-dashboard.png`, … を 1 件ずつ
 6. コミットして PR を作成 (`gh pr create`)。本文にテスト結果とスクショの要約を書く
+   - 本文のスクショも 5. のルールに従い、フォルダ名ではなく `*.png` を
+     1 件ずつファイル名で列挙して説明を添える
 
 # 制約
 - main へ直接 push しない。必ず feature ブランチ + PR
