@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <style>
+    :root { --logo: #1F2233; }                      /* ライトテーマ: 濃紺 */
+    @media (prefers-color-scheme: dark) {
+      :root { --logo: #F5F6FA; }                    /* ダークテーマ: オフホワイト */
+    }
+  </style>
+  <defs>
+    <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect x="-64" y="-64" width="640" height="640" fill="white"/>
+      <path d="M262 150 L301 391.7 L200 474 Z"
+            fill="none" stroke="black" stroke-width="24" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g transform="translate(0,-25.5)">
+    <circle cx="256" cy="228" r="124" fill="none" stroke="var(--logo)" stroke-width="52" mask="url(#cut)"/>
+    <path d="M262 150 L301 391.7 L200 474 Z" fill="var(--logo)"/>
+  </g>
+</svg>
