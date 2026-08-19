@@ -69,11 +69,19 @@
 </div>
 
 <style>
+  /*
+   * 画面いっぱいに広げてカードを上下左右中央へ。
+   * 中央寄せは align/justify ではなく カード側の `margin: auto` で行う。
+   * flex の align-items:center はコンテナよりコンテンツが高いと上側に
+   * はみ出して切れてしまう（スクロールしても届かない）が、auto margin なら
+   * 余白が無い時に 0 に潰れるだけなので切れない。
+   */
   .login-page {
     min-height: 100vh;
+    /* モバイル/Tauri のツールバー分を差し引いた実高さ。未対応環境では上の
+       100vh がそのまま使われる。 */
+    min-height: 100dvh;
     display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 2rem;
     background:
       radial-gradient(
@@ -87,6 +95,7 @@
   .login-card {
     width: 100%;
     max-width: 22rem;
+    margin: auto;
     background: var(--bg-elev);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);

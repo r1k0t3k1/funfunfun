@@ -27,7 +27,11 @@
 </script>
 
 <div class="app-shell">
-  <!-- 左サイドバー：メニューのみ -->
+  <!--
+    左サイドバー：既定はアイコンのみの細い状態で、ホバー（またはキーボード
+    フォーカス）で展開してラベルを表示する。展開はコンテンツの上に覆い被さる
+    オーバーレイなので、テーブルの列幅が hover 毎にガタつくことがない。
+  -->
   <aside class="sidebar">
     <div class="sidebar-brand">
       <span class="brand-mark"><Icon name="terminal" size={18} /></span>
@@ -43,17 +47,23 @@
           href={item.href}
           class="nav-link"
           class:active={$page.url.pathname.startsWith(item.href)}
+          title={item.label}
         >
-          <Icon name={item.icon} size={18} />
-          <span>{item.label}</span>
+          <span class="nav-icon"><Icon name={item.icon} size={18} /></span>
+          <span class="nav-label">{item.label}</span>
         </a>
       {/each}
     </nav>
 
     <div class="sidebar-footer">
-      <button class="nav-link logout" onclick={handleLogout}>
-        <Icon name="logout" size={18} />
-        <span>ログアウト</span>
+      <button
+        class="nav-link logout"
+        onclick={handleLogout}
+        title="ログアウト"
+        aria-label="ログアウト"
+      >
+        <span class="nav-icon"><Icon name="logout" size={18} /></span>
+        <span class="nav-label">ログアウト</span>
       </button>
     </div>
   </aside>
@@ -66,27 +76,78 @@
 
 <style>
   .app-shell {
+    /* 折りたたみ時 / 展開時の幅。content 側のオフセットにも使う。 */
+    --sidebar-w: 4rem;
+    --sidebar-w-open: 15rem;
+
     display: flex;
     min-height: 100vh;
   }
 
   .sidebar {
+    /* fixed + content 側の margin-left で「覆い被さる」展開にする。
+       flex アイテムのままだと展開のたびにメイン領域が縮んで再レイアウトされる。 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 40;
+
     display: flex;
     flex-direction: column;
-    width: 240px;
-    flex-shrink: 0;
+    width: var(--sidebar-w);
+    /* 折りたたみ時にラベルが外へはみ出すのを隠す */
+    overflow: hidden;
     background: var(--bg-elev);
     border-right: 1px solid var(--border);
     padding: 1rem 0.75rem;
+    transition:
+      width 0.16s ease,
+      box-shadow 0.16s ease;
+  }
+
+  /* :focus-within も条件に入れる。Tab でメニューを辿った時にもラベルが
+     見えないと、キーボード操作ではどの項目か判別できなくなる。 */
+  .sidebar:hover,
+  .sidebar:focus-within {
+    width: var(--sidebar-w-open);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* 折りたたみ時はアイコンを中央に、展開時は左寄せ＋ラベル表示。 */
+  .nav-icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .nav-label {
+    display: none;
+    white-space: nowrap;
+  }
+  .sidebar:hover .nav-label,
+  .sidebar:focus-within .nav-label {
+    display: inline;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sidebar {
+      transition: none;
+    }
   }
 
   .sidebar-brand {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.6rem;
     padding: 0.5rem 0.5rem 1.1rem;
     margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--border);
+  }
+  .sidebar:hover .sidebar-brand,
+  .sidebar:focus-within .sidebar-brand {
+    justify-content: flex-start;
   }
   .brand-mark {
     display: inline-flex;
@@ -100,9 +161,13 @@
     flex-shrink: 0;
   }
   .brand-text {
-    display: flex;
+    display: none;
     flex-direction: column;
     line-height: 1.2;
+  }
+  .sidebar:hover .brand-text,
+  .sidebar:focus-within .brand-text {
+    display: flex;
   }
   .brand-name {
     font-weight: 700;
@@ -123,6 +188,9 @@
   .nav-link {
     display: flex;
     align-items: center;
+    /* 折りたたみ時はアイコンだけを中央に置く。ラベルは display:none で
+       レイアウトから外れるので、これで正確に中央へ来る。 */
+    justify-content: center;
     gap: 0.65rem;
     padding: 0.55rem 0.6rem;
     border-radius: var(--radius);
@@ -135,6 +203,10 @@
     width: 100%;
     text-align: left;
     font-family: inherit;
+  }
+  .sidebar:hover .nav-link,
+  .sidebar:focus-within .nav-link {
+    justify-content: flex-start;
   }
   .nav-link:hover {
     background: var(--bg-hover);
@@ -157,6 +229,9 @@
   .content {
     flex: 1;
     min-width: 0;
+    /* サイドバーは position:fixed なので、折りたたみ幅の分だけ自前でずらす。
+       展開してもこの値は変わらない = メイン領域は動かない。 */
+    margin-left: var(--sidebar-w);
     padding: 2rem 2.5rem;
     overflow-x: auto;
   }
