@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "f3-client",
+  "productName": "Fun Fun Fun",
   "version": "0.1.0",
   "identifier": "com.rikoteki.f3-client",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "f3-client",
+        "title": "Fun Fun Fun",
         "width": 1200,
         "height": 800,
         "minWidth": 800,
