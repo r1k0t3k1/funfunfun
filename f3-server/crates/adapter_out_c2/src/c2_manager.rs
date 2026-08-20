@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use application::domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol};
-use application::port::outbound::c2_manager::C2Manager;
-use application::port::outbound::listener::ListenerPort;
+use application::outbound::c2_manager::C2Manager;
+use application::outbound::listener::ListenerPort;
 use std::sync::Arc;
 use std::{collections::HashMap, net::SocketAddr};
 use tokio::sync::Mutex;
@@ -33,7 +33,7 @@ impl C2Manager for C2ManagerImpl {
             ListenerProtocol::Http => {
                 let listener = HttpListener::new(name.clone(), addr, protocol.clone());
                 let listener_model = Into::<ListenerModel>::into(&listener);
-                
+
                 for l in self.listeners.values() {
                     if l.lock().await.addr() == addr {
                         return Err(anyhow!("Address already in use."));
@@ -54,11 +54,7 @@ impl C2Manager for C2ManagerImpl {
             .get(&listener_id)
             .ok_or(anyhow!("Listener {listener_id} not found"))?;
 
-        let protocol = {
-            listener_arc.lock()
-                .await
-                .protocol()
-        };
+        let protocol = { listener_arc.lock().await.protocol() };
 
         match protocol {
             ListenerProtocol::Http => HttpListener::spawn_server(listener_arc.clone()).await?,

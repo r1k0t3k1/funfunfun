@@ -113,7 +113,15 @@
           "500": {
             "description": "Listenerの作成に失敗"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": [
+              "Admin",
+              "Write"
+            ]
+          }
+        ]
       }
     },
     "/listener/list": {
@@ -136,7 +144,12 @@
           "500": {
             "description": "ハンドリングできない異常"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       }
     },
     "/listener/remove": {
@@ -162,7 +175,15 @@
           "500": {
             "description": "Listenerの削除に失敗"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": [
+              "Admin",
+              "Write"
+            ]
+          }
+        ]
       }
     },
     "/listener/start": {
@@ -188,7 +209,15 @@
           "500": {
             "description": "Listenerの起動に失敗"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": [
+              "Admin",
+              "Write"
+            ]
+          }
+        ]
       }
     },
     "/listener/stop": {
@@ -214,7 +243,15 @@
           "500": {
             "description": "Listenerの停止に失敗"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": [
+              "Admin",
+              "Write"
+            ]
+          }
+        ]
       }
     },
     "/operator/get": {
@@ -237,7 +274,12 @@
           "200": {
             "description": "オペレータ詳細情報"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       }
     },
     "/operator/list": {
@@ -250,7 +292,42 @@
           "200": {
             "description": "オペレータ一覧"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/operator/toggle_status": {
+      "post": {
+        "tags": [
+          "crate::controller::operator_controller"
+        ],
+        "operationId": "toggle_operator_status",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleOperatorStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "有効化状態変更完了"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": [
+              "Admin"
+            ]
+          }
+        ]
       }
     }
   },
@@ -371,6 +448,17 @@
           }
         }
       },
+      "ToggleOperatorStatusRequest": {
+        "type": "object",
+        "required": [
+          "operator_id"
+        ],
+        "properties": {
+          "operator_id": {
+            "type": "string"
+          }
+        }
+      },
       "UploadFile": {
         "type": "object",
         "required": [
@@ -385,6 +473,12 @@
             "type": "string"
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "bearer_auth": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

@@ -13,11 +13,11 @@ impl RawPassword {
 
     fn validate(value: &String) -> Result<(), DomainError> {
         if value.len() < 8 {
-            return Err(DomainError::PasswordLengthTooShort { min: 8 })
+            return Err(DomainError::PasswordLengthTooShort { min: 8 });
         }
 
         if value.len() > 256 {
-            return Err(DomainError::PasswordLengthTooLong { max: 256 })
+            return Err(DomainError::PasswordLengthTooLong { max: 256 });
         }
         Ok(())
     }

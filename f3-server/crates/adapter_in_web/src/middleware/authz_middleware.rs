@@ -92,7 +92,6 @@ where
         let required_role = self.role_required.clone();
 
         Box::pin(async move {
-            log::warn!("TEST");
             let operator = req
                 .extensions()
                 .get::<AuthOperator>()

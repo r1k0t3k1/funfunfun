@@ -1,5 +1,5 @@
-use application::domain::model::password_model::RawPassword;
 use adapter_out_persistence::password_hasher_impl::Argon2PasswordHasher;
+use application::domain::model::password_model::RawPassword;
 use application::port::outbound::password_hasher::PasswordHasherTrait;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

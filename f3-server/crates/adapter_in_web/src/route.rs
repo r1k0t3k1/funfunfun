@@ -1,15 +1,13 @@
 use crate::{
-    apidocs::swagger_ui,
-    controller::{
+    apidocs::swagger_ui, controller::{
         auth_controller::{login, logout},
         file_upload_controller::upload_file,
         health_controller::health_check_db,
         listener_controller::{
             create_listener, list_listeners, remove_listener, start_listener, stop_listener,
-        }, operator_controller::{get_operator, list_operators},
-    },
-    middleware::authn_middleware::AuthN,
-    state::AppState,
+        },
+        operator_controller::{get_operator, list_operators, toggle_operator_status},
+    }, dto::role_dto::Role, middleware::{authn_middleware::AuthN, authz_middleware::{AuthZ, RoleRequirement}}, state::AppState
 };
 use actix_files::Files;
 use actix_web::{Error, dev::ServiceRequest, web};
@@ -49,9 +47,11 @@ pub fn configure_route(state: web::Data<AppState>) -> impl FnOnce(&mut web::Serv
             )
             .service(
                 web::scope("/operator")
-                .wrap(AuthN)
-                .service(list_operators)
-                .service(get_operator)
+                    .wrap(AuthN)
+                    //.wrap(AuthZ::new(RoleRequirement::Is(Role::Admin)))
+                    .service(list_operators)
+                    .service(get_operator)
+                    .service(toggle_operator_status)
             );
     }
 }

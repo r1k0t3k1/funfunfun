@@ -89,7 +89,7 @@ where
                 .await
                 .map_err(|_| ApiError::Unauthorized)?;
 
-            if !is_valid_session {
+            if is_valid_session == false {
                 return Err(ApiError::Unauthorized.into());
             }
 
@@ -100,6 +100,10 @@ where
                 .map_err(|e| ApiError::InternelServerError)?
                 //.map_err(|e| ApiError::UsecaseError(e))?
                 .ok_or_else(|| ApiError::Unauthorized)?;
+
+            if operator.is_enabled == false {
+                return Err(ApiError::Unauthorized.into());
+            }
 
             req.extensions_mut().insert(AuthOperator::from(operator));
             service.call(req).await

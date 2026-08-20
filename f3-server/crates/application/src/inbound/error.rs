@@ -1,4 +1,4 @@
-use crate::{domain::error::DomainError, port::outbound::error::RepositoryError};
+use crate::{domain::error::DomainError, outbound::error::RepositoryError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum AuthUsecaseError {

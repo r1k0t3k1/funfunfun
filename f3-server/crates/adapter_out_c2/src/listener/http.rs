@@ -1,27 +1,27 @@
-use std::convert::Infallible;
-use std::net::SocketAddr;
-use std::sync::Arc;
-use std::time::Duration;
 use anyhow::anyhow;
-use http_body_util::Full;
-use hyper::body::{Bytes, Incoming};
-use hyper::service::service_fn;
-use hyper::{Request, Response, StatusCode};
-use hyper::server::conn::http1;
-use hyper_util::rt::TokioIo;
-use hyper_util::server::graceful::GracefulShutdown;
-use tokio::sync::Mutex;
-use tokio::{net::TcpListener};
-use tokio::task::JoinHandle;
-use tokio_util::sync::CancellationToken;
-use std::pin::pin;
 use application::{
     domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol},
-    port::outbound::{
+    outbound::{
         agent::{Agent, AgentId},
         listener::ListenerPort,
     },
 };
+use http_body_util::Full;
+use hyper::body::{Bytes, Incoming};
+use hyper::server::conn::http1;
+use hyper::service::service_fn;
+use hyper::{Request, Response, StatusCode};
+use hyper_util::rt::TokioIo;
+use hyper_util::server::graceful::GracefulShutdown;
+use std::convert::Infallible;
+use std::net::SocketAddr;
+use std::pin::pin;
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::net::TcpListener;
+use tokio::sync::Mutex;
+use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 pub struct HttpListener {
@@ -50,13 +50,16 @@ impl HttpListener {
             cancel_token: CancellationToken::new(),
         }
     }
-    
-    async fn run_http(id: ListenerId, addr: SocketAddr, cancel_token: CancellationToken) -> anyhow::Result<()> {
+
+    async fn run_http(
+        id: ListenerId,
+        addr: SocketAddr,
+        cancel_token: CancellationToken,
+    ) -> anyhow::Result<()> {
         let listener = TcpListener::bind(addr)
             .await
             .map_err(|e| anyhow!("HTTP Listener {} failed to bind address {}", id, addr))?;
 
-        
         let http = http1::Builder::new();
         let graceful = GracefulShutdown::new();
         let mut shutdown = pin!(cancel_token.cancelled());
@@ -107,7 +110,6 @@ impl HttpListener {
             }
         }
         Ok(())
-
     }
 
     pub async fn spawn_server(listener_arc: Arc<Mutex<dyn ListenerPort>>) -> anyhow::Result<()> {
@@ -117,11 +119,11 @@ impl HttpListener {
         };
 
         let handle = tokio::spawn({
-                async move {
-                    if let Err(e) = Self::run_http(id, addr, cancel_token).await {
-                        log::error!("HTTP Listener error: {e}")
-                    }
+            async move {
+                if let Err(e) = Self::run_http(id, addr, cancel_token).await {
+                    log::error!("HTTP Listener error: {e}")
                 }
+            }
         });
 
         log::info!("HTTP Listener {id} started at {addr}");
@@ -171,7 +173,8 @@ impl ListenerPort for HttpListener {
     }
 
     async fn stop(&mut self) -> anyhow::Result<()> {
-        let handle = self.join_handle
+        let handle = self
+            .join_handle
             .take()
             .ok_or_else(|| anyhow!("Listener {} is not runnning", self.id))?;
 
@@ -181,7 +184,7 @@ impl ListenerPort for HttpListener {
             .await
             .map_err(|_| anyhow::anyhow!("Listener {} did not stop within 5s", self.id))?
             .map_err(|e| anyhow::anyhow!("Listener task panicked: {e}"))?;
-        
+
         log::info!("HTTP Listener {} stopped", self.id);
         Ok(())
     }
@@ -189,7 +192,7 @@ impl ListenerPort for HttpListener {
     fn set_join_handle(&mut self, join_handle: JoinHandle<()>) {
         self.join_handle = Some(join_handle);
     }
-    
+
     // TODO cancel_tokenを外から使う必要あるか？
     fn get_cancel_token(&mut self) -> CancellationToken {
         self.cancel_token.clone()
@@ -212,14 +215,9 @@ impl ListenerPort for HttpListener {
     }
 }
 
-async fn handle_request(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible>{
-    Ok(
-        Response::builder()
+async fn handle_request(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
+    Ok(Response::builder()
         .status(StatusCode::NOT_FOUND)
         .body(Full::new(Bytes::new()))
-        .unwrap()
-    )
+        .unwrap())
 }
-
-
-

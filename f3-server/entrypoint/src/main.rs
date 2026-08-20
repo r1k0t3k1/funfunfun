@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
 
     let c2_manager = Arc::new(Mutex::new(C2ManagerImpl::new()));
     let listener_service = Arc::new(ListenerService::new(c2_manager));
-    
+
     let operator_service = Arc::new(OperatorService::new(
         operator_repository_impl,
         session_repository_impl,

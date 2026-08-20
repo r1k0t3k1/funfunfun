@@ -5,7 +5,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol},
-    port::outbound::agent::{Agent, AgentId},
+    outbound::agent::{Agent, AgentId},
 };
 
 #[async_trait::async_trait]

@@ -1,12 +1,15 @@
 use std::sync::Arc;
 
 use crate::{
-    domain::model::{operator_model::Operator, password_model::RawPassword, session_model::Session},
-    port::{
-        inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError},
-        outbound::{
-            error::RepositoryError, operator_repository::OperatorRepository, password_hasher::{self, PasswordHasherTrait}, session_repository::SessionRepository
-        },
+    domain::model::{
+        operator_model::Operator, password_model::{HashedPassword, RawPassword}, session_model::Session,
+    },
+    inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError},
+    outbound::{
+        error::RepositoryError,
+        operator_repository::OperatorRepository,
+        password_hasher::{self, PasswordHasherTrait},
+        session_repository::SessionRepository,
     },
 };
 
@@ -38,12 +41,6 @@ impl AuthUsecase for AuthService {
         operator_id: String,
         password: String,
     ) -> Result<Session, AuthUsecaseError> {
-        // ユーザ列挙防止のため最初にハッシュ化
-        let password_hash = self.password_hasher
-            .clone()
-            .hash(&RawPassword::new(password).map_err(|e| AuthUsecaseError::AuthenticationFailed)?)
-            .map_err(|e| AuthUsecaseError::AuthenticationFailed)?;
-
         let operator = self
             .operator_repository
             .find_by_id(operator_id)
@@ -54,11 +51,26 @@ impl AuthUsecase for AuthService {
                     RepositoryError::NotFound => AuthUsecaseError::AuthenticationFailed,
                     _ => AuthUsecaseError::Unexpected(e.into()),
                 }
-            })?
-            .ok_or(AuthUsecaseError::AuthenticationFailed)?;
+            })?;
+
+        // レスポンスタイムによるユーザ列挙を防ぐ
+        let Some(operator) = operator else {
+            let _ = self.password_hasher.hash(&RawPassword::new("dummydummy".to_string()).unwrap());
+            return Err(AuthUsecaseError::AuthenticationFailed)
+        };
+
+        if operator.is_enabled == false {
+            let _ = self.password_hasher.hash(&RawPassword::new("dummydummy".to_string()).unwrap());
+            return Err(AuthUsecaseError::AuthenticationFailed);
+        }
         
-        if !operator.verify_password(password_hash) {
-           return Err(AuthUsecaseError::AuthenticationFailed) 
+        let raw_password = RawPassword::new(password)
+            .map_err(|_| AuthUsecaseError::AuthenticationFailed)?;
+
+        let password_match = self.password_hasher.verify(&raw_password, &HashedPassword::from_phc_string(operator.password_hash));
+
+        if password_match == false {
+            return Err(AuthUsecaseError::AuthenticationFailed);
         }
 
         self.session_repository

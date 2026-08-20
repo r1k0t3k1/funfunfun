@@ -13,6 +13,9 @@ use application::domain::model::listener_model::ListenerProtocol;
 
 #[utoipa::path(
     context_path = "/listener",
+    security(
+        ("bearer_auth" = [])
+    ),
     responses(
         (status = 200, body = ListListenerResponse, description = "Listenerの一覧"),
         (status = 500, description = "ハンドリングできない異常")
@@ -38,6 +41,9 @@ pub async fn list_listeners(state: web::Data<AppState>) -> Result<HttpResponse, 
 
 #[utoipa::path(
     context_path = "/listener",
+    security(
+        ("bearer_auth" = ["Admin", "Write"])
+    ),
     responses(
         (status = 200, description = "Listenerの作成に成功"),
         (status = 500, description = "Listenerの作成に失敗")
@@ -67,6 +73,9 @@ pub async fn create_listener(
 
 #[utoipa::path(
     context_path = "/listener",
+    security(
+        ("bearer_auth" = ["Admin", "Write"])
+    ),
     responses(
         (status = 200, description = "Listenerが正常に起動"),
         (status = 500, description = "Listenerの起動に失敗")
@@ -93,6 +102,9 @@ pub async fn start_listener(
 
 #[utoipa::path(
     context_path = "/listener",
+    security(
+        ("bearer_auth" = ["Admin", "Write"])
+    ),
     responses(
         (status = 200, description = "Listenerが正常に停止"),
         (status = 500, description = "Listenerの停止に失敗")
@@ -119,6 +131,9 @@ pub async fn stop_listener(
 
 #[utoipa::path(
     context_path = "/listener",
+    security(
+        ("bearer_auth" = ["Admin", "Write"])
+    ),
     responses(
         (status = 200, description = "Listenerの削除に成功"),
         (status = 500, description = "Listenerの削除に失敗")

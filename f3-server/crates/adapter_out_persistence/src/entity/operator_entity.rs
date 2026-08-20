@@ -10,6 +10,7 @@ pub struct OperatorEntity {
     pub password_hash: String,
     pub description: Option<String>,
     pub role: RoleEntity,
+    pub is_enabled: bool,
     pub version: i64,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -23,6 +24,7 @@ impl Into<Operator> for OperatorEntity {
             password_hash: self.password_hash,
             description: self.description,
             role: self.role.into(),
+            is_enabled: self.is_enabled,
             version: self.version,
         }
     }

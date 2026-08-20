@@ -1,4 +1,4 @@
-use crate::{domain::model::session_model::Session, port::outbound::error::RepositoryError};
+use crate::{domain::model::session_model::Session, outbound::error::RepositoryError};
 
 #[async_trait::async_trait]
 pub trait SessionRepository: Send + Sync {

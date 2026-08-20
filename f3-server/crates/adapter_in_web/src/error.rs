@@ -1,7 +1,7 @@
 use actix_web::HttpResponse;
 use actix_web::http::StatusCode;
 use actix_web::{error::ResponseError, mime};
-use application::port::inbound::error::AuthUsecaseError;
+use application::inbound::error::AuthUsecaseError;
 use serde::Serialize;
 use std::fmt::Display;
 
@@ -16,7 +16,7 @@ pub enum ApiError {
 
 #[derive(Debug, Serialize)]
 struct ErrorResponse {
-    error: ApiError
+    error: ApiError,
 }
 
 impl Display for ApiError {
@@ -45,15 +45,18 @@ impl ResponseError for ApiError {
     fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
         HttpResponse::build(self.status_code())
             .content_type(mime::APPLICATION_JSON)
-            .json(ErrorResponse { error: self.clone() })
+            .json(ErrorResponse {
+                error: self.clone(),
+            })
     }
 }
 
 impl From<AuthUsecaseError> for ApiError {
     fn from(value: AuthUsecaseError) -> Self {
         match value {
-            AuthUsecaseError::AuthenticationFailed |
-            AuthUsecaseError::SessionExpired => ApiError::Unauthorized,
+            AuthUsecaseError::AuthenticationFailed | AuthUsecaseError::SessionExpired => {
+                ApiError::Unauthorized
+            }
             AuthUsecaseError::Unexpected(e) => ApiError::InternelServerError,
             AuthUsecaseError::Domain(e) => ApiError::BadRequest,
         }

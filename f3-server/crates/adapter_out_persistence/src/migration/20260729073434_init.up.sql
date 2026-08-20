@@ -36,18 +36,36 @@ CREATE TABLE IF NOT EXISTS operators (
   name VARCHAR(255) NOT NULL, 
   description VARCHAR(1024), 
   role VARCHAR(20) NOT NULL REFERENCES roles(role_id),
+  is_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   version BIGINT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 );
 
-INSERT INTO operators (operator_id, password_hash, name, description, role)
+INSERT INTO operators (operator_id, password_hash, name, description, role, is_enabled)
 VALUES (
   'administrator',
   '$argon2id$v=19$m=19456,t=2,p=1$OgYHvYo/Il/LCzNJtRTnHQ$i+oS59Fue3lg+4xKHOw96qqGWV8uZ+1ZPglSMwLFwKA', -- password
   'administrator',
   '全体管理者',
-  'Admin'
+  'Admin',
+  TRUE
+),
+(
+  'reader',
+  '$argon2id$v=19$m=19456,t=2,p=1$OgYHvYo/Il/LCzNJtRTnHQ$i+oS59Fue3lg+4xKHOw96qqGWV8uZ+1ZPglSMwLFwKA', -- password
+  'reader',
+  '読み取り権限アカウント',
+  'Read',
+  TRUE
+),
+(
+  'writer',
+  '$argon2id$v=19$m=19456,t=2,p=1$OgYHvYo/Il/LCzNJtRTnHQ$i+oS59Fue3lg+4xKHOw96qqGWV8uZ+1ZPglSMwLFwKA', -- password
+  'writer',
+  '書き込み権限アカウント',
+  'Write',
+  TRUE
 );
 
 CREATE TRIGGER trg_10_operators_updated_at_trigger
