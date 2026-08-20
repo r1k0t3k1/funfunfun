@@ -293,6 +293,7 @@ dependencies = [
  "openssl",
  "regex",
  "serde",
+ "serde_json",
  "thiserror",
  "util",
  "utoipa",

@@ -1,9 +1,12 @@
 use crate::dto::operator_dto::{
-    AuthOperator, GetOperatorRequest, OperatorResponse, ToggleOperatorStatusRequest, UpdatePasswordRequest
+    GetOperatorRequest, OperatorResponse, ToggleOperatorStatusRequest, UpdatePasswordRequest
 };
 use crate::error::ApiError;
+use crate::response::ResponseBody;
 use crate::state::AppState;
-use actix_web::{HttpResponse, get, post, web};
+use actix_web::http::StatusCode;
+use actix_web::{Responder, get, post, web};
+use application::domain::model::operator_model::Operator;
 
 #[utoipa::path(
     context_path = "/operator",
@@ -15,17 +18,17 @@ use actix_web::{HttpResponse, get, post, web};
     )
 )]
 #[get("/list")]
-pub async fn list_operators(state: web::Data<AppState>) -> Result<HttpResponse, ApiError> {
+pub async fn list_operators(state: web::Data<AppState>) -> Result<impl Responder, ApiError> {
     let operators: Vec<OperatorResponse> = state
         .operator_usecase
         .list_operators()
         .await
-        .map_err(|e| ApiError::BadRequest)?
+        .map_err(|_| ApiError::InternelServerError)?
         .iter()
         .map(|o| Into::<OperatorResponse>::into(o.clone()))
         .collect();
 
-    Ok(HttpResponse::Ok().json(operators))
+    Ok(ResponseBody::ok(StatusCode::OK, operators))
 }
 
 #[utoipa::path(
@@ -33,6 +36,7 @@ pub async fn list_operators(state: web::Data<AppState>) -> Result<HttpResponse, 
     security(
         ("bearer_auth" = [])
     ),
+    params(GetOperatorRequest),
     responses(
         (status = 200, description = "オペレータ詳細情報"),
     )
@@ -40,17 +44,17 @@ pub async fn list_operators(state: web::Data<AppState>) -> Result<HttpResponse, 
 #[get("/get")]
 pub async fn get_operator(
     state: web::Data<AppState>,
-    operator: web::Json<GetOperatorRequest>,
-) -> Result<HttpResponse, ApiError> {
+    operator: web::Query<GetOperatorRequest>,
+) -> Result<impl Responder, ApiError> {
     let operator = state
         .operator_usecase
         .get_operator(operator.operator_id.clone())
         .await
-        .map_err(|e| ApiError::BadRequest)?
-        .ok_or_else(|| ApiError::InternelServerError)
+        .map_err(|_| ApiError::InternelServerError)?
+        .ok_or_else(|| ApiError::NotFound)
         .map(|o| Into::<OperatorResponse>::into(o))?;
-
-    Ok(HttpResponse::Ok().json(operator))
+    
+    Ok(ResponseBody::ok(StatusCode::OK, operator))
 }
 
 #[utoipa::path(
@@ -65,21 +69,19 @@ pub async fn get_operator(
 #[post("/update_password")]
 pub async fn update_password(
     state: web::Data<AppState>,
-    auth_operator: web::ReqData<AuthOperator>,
+    auth_operator: web::ReqData<Operator>,
     request: web::Json<UpdatePasswordRequest>,
-) -> Result<HttpResponse, ApiError> {
+) -> Result<impl Responder, ApiError> {
     let operator_id = auth_operator.operator_id.clone();
     let current_password = request.current_password.clone();
     let new_password = request.new_password.clone();
 
-    let res = state
+    state
         .operator_usecase
         .change_password(operator_id, current_password, new_password)
         .await
-        .map(|_| HttpResponse::Ok().finish())
-        .map_err(|e| ApiError::BadRequest)?;
-
-    Ok(res)
+        .map(|result| ResponseBody::ok(StatusCode::OK, result))
+        .map_err(|e| ApiError::BadRequest {detail: format!("Failed to update password. inner error: {e}")})
 }
 
 #[utoipa::path(
@@ -95,19 +97,14 @@ pub async fn update_password(
 pub async fn toggle_operator_status(
     state: web::Data<AppState>,
     request: web::Json<ToggleOperatorStatusRequest>,
-) -> Result<HttpResponse, ApiError> {
+) -> Result<impl Responder, ApiError> {
     let operator_id = request.operator_id.clone();
 
-    let res = state
+    state
         .operator_usecase
         .toggle_status(operator_id)
         .await
-        .map(|_| HttpResponse::Ok().finish())
-        .map_err(|e|  { 
-            log::error!("{e}");
-            return ApiError::BadRequest;
-        })?;
-
-    Ok(res)
+        .map(|result| ResponseBody::ok(StatusCode::OK, Into::<OperatorResponse>::into(result)))
+        .map_err(|_| ApiError::InternelServerError)
 }
 

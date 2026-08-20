@@ -8,7 +8,7 @@ use crate::{
     outbound::{
         error::RepositoryError,
         operator_repository::OperatorRepository,
-        password_hasher::{self, PasswordHasherTrait},
+        password_hasher::PasswordHasherTrait,
         session_repository::SessionRepository,
     },
 };

@@ -27,14 +27,14 @@ impl ListenerUsecase for ListenerService {
         let mut c2_manager = self.c2_manager.lock().await;
         let ipv4_addr = lhost
             .parse()
-            .map_err(|e| ListenerUsecaseError::InvalidAddress)?;
+            .map_err(|_| ListenerUsecaseError::InvalidAddress)?;
         let addr = std::net::IpAddr::V4(ipv4_addr);
 
         let socket_addr = SocketAddr::new(addr, lport);
         c2_manager
             .add_listener(name, socket_addr, protocol)
             .await
-            .map_err(|e| ListenerUsecaseError::AddressAlreadyInUse)?;
+            .map_err(|_| ListenerUsecaseError::AddressAlreadyInUse)?;
         Ok(())
     }
 
@@ -43,7 +43,7 @@ impl ListenerUsecase for ListenerService {
         c2_manager
             .start(listener_id)
             .await
-            .map_err(|e| ListenerUsecaseError::FailedToStart)?;
+            .map_err(|_| ListenerUsecaseError::FailedToStart)?;
         Ok(())
     }
 
@@ -52,7 +52,7 @@ impl ListenerUsecase for ListenerService {
         c2_manager
             .stop(listener_id)
             .await
-            .map_err(|e| ListenerUsecaseError::FailedToStop)?;
+            .map_err(|_| ListenerUsecaseError::FailedToStop)?;
         Ok(())
     }
 
@@ -60,7 +60,7 @@ impl ListenerUsecase for ListenerService {
         let mut c2_manager = self.c2_manager.lock().await;
         c2_manager
             .remove_listener(listener_id)
-            .map_err(|e| ListenerUsecaseError::FailedToRemove)?;
+            .map_err(|_| ListenerUsecaseError::FailedToRemove)?;
         Ok(())
     }
 }
@@ -70,31 +70,3 @@ impl ListenerService {
         Self { c2_manager }
     }
 }
-
-//fn spawn_worker<F, Fut, C>(mut rx: tokio::sync::mpsc::UnboundedReceiver<Vec<AgentEvent>>, ctx: C, f: F)
-//where
-//    C: Clone + Send + 'static,
-//    F: Fn(Vec<AgentEvent>, C) -> Fut + Send + 'static,
-//    Fut: Future<Output = ()> + Send,
-//{
-//    tokio::spawn(async move {
-//        while let Some(req) = rx.recv().await {
-//            f(req, ctx.clone()).await;
-//        }
-//    });
-//}
-//
-//async fn handle_request(agent_events: Vec<AgentEvent>, lu: ListenerUsecase) {
-//    log::info!("[+] Request received. event count {}", agent_events.len());
-//    for evt in agent_events {
-//        match evt {
-//            AgentEvent::Checkin { agent_public_key, response_sender } => {
-//                log::info!("[+] Checkin public key: {agent_public_key:?}");
-//                let res = CheckinResponse::new();
-//                response_sender.send(res).unwrap();
-//            },
-//            AgentEvent::CheckinComplete { agent_info, response_sender } => log::info!("[+] AgentInfo: {agent_info}"),
-//        }
-//    }
-//    //lu.listener_manager.
-//}

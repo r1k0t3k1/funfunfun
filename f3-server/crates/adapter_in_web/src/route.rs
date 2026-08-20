@@ -7,7 +7,7 @@ use crate::{
             create_listener, list_listeners, remove_listener, start_listener, stop_listener,
         },
         operator_controller::{get_operator, list_operators, toggle_operator_status},
-    }, dto::role_dto::Role, middleware::{authn_middleware::AuthN, authz_middleware::{AuthZ, RoleRequirement}}, state::AppState
+    }, middleware::{authn_middleware::AuthN, authz_middleware::{AuthZ, RoleRequirement}}, state::AppState
 };
 use actix_files::Files;
 use actix_web::{Error, dev::ServiceRequest, web};

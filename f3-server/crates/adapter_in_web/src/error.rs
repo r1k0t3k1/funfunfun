@@ -5,27 +5,24 @@ use application::inbound::error::AuthUsecaseError;
 use serde::Serialize;
 use std::fmt::Display;
 
+use crate::response::ResponseBody;
+
 #[derive(Debug, Clone, Serialize, thiserror::Error)]
 pub enum ApiError {
-    BadRequest,
+    BadRequest { detail: String },
     Unauthorized,
     Forbidden,
     NotFound,
     InternelServerError,
 }
 
-#[derive(Debug, Serialize)]
-struct ErrorResponse {
-    error: ApiError,
-}
-
 impl Display for ApiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ApiError::BadRequest => write!(f, "BadRequest"),
+            ApiError::BadRequest {detail:d} => write!(f, "BadRequest: {d}"),
             ApiError::Unauthorized => write!(f, "Unauthorized"),
             ApiError::Forbidden => write!(f, "Forbidden"),
-            ApiError::NotFound => write!(f, "NotFound"),
+            ApiError::NotFound  => write!(f, "NotFound"),
             ApiError::InternelServerError => write!(f, "InternelServerError"),
         }
     }
@@ -34,7 +31,7 @@ impl Display for ApiError {
 impl ResponseError for ApiError {
     fn status_code(&self) -> actix_web::http::StatusCode {
         match self {
-            ApiError::BadRequest => StatusCode::BAD_REQUEST,
+            ApiError::BadRequest {detail:_}=> StatusCode::BAD_REQUEST,
             ApiError::Unauthorized => StatusCode::UNAUTHORIZED,
             ApiError::Forbidden => StatusCode::FORBIDDEN,
             ApiError::NotFound => StatusCode::NOT_FOUND,
@@ -43,11 +40,16 @@ impl ResponseError for ApiError {
     }
 
     fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
+        let error = ResponseBody::error(self.status_code(), self.clone());
         HttpResponse::build(self.status_code())
             .content_type(mime::APPLICATION_JSON)
-            .json(ErrorResponse {
-                error: self.clone(),
-            })
+            .json(error)
+    }
+}
+
+impl Into<ResponseBody<ApiError>> for ApiError {
+    fn into(self) -> ResponseBody<ApiError> {
+        ResponseBody::error(self.status_code(), self.clone())
     }
 }
 
@@ -57,8 +59,8 @@ impl From<AuthUsecaseError> for ApiError {
             AuthUsecaseError::AuthenticationFailed | AuthUsecaseError::SessionExpired => {
                 ApiError::Unauthorized
             }
-            AuthUsecaseError::Unexpected(e) => ApiError::InternelServerError,
-            AuthUsecaseError::Domain(e) => ApiError::BadRequest,
+            AuthUsecaseError::Unexpected(_) => ApiError::InternelServerError,
+            AuthUsecaseError::Domain(e) => ApiError::BadRequest {detail: e.to_string()},
         }
     }
 }

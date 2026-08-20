@@ -6,23 +6,20 @@ use crate::{
         role_model::Role,
     },
     inbound::{error::OperatorUsecaseError, operator_usecase::OperatorUsecase},
-    outbound::{operator_repository::OperatorRepository, session_repository::SessionRepository},
+    outbound::operator_repository::OperatorRepository,
 };
 
 #[derive(Clone)]
 pub struct OperatorService {
     operator_repository: Arc<dyn OperatorRepository>,
-    session_repository: Arc<dyn SessionRepository>,
 }
 
 impl OperatorService {
     pub fn new(
         operator_repository: Arc<dyn OperatorRepository>,
-        session_repository: Arc<dyn SessionRepository>,
     ) -> Self {
         Self {
             operator_repository,
-            session_repository,
         }
     }
 }
