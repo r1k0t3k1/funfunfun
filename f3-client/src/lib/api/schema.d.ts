@@ -184,6 +184,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AuthenticateRequest: {
+            operator_id: string;
+            password: string;
+        };
         CreateListenerRequest: {
             lhost: string;
             /** Format: int32 */
@@ -202,10 +206,6 @@ export interface components {
         };
         /** @enum {string} */
         ListenerType: "TCP" | "HTTP" | "HTTPS";
-        OperatorCredential: {
-            password: string;
-            username: string;
-        };
         RemoveListenerRequest: {
             listener_id: string;
         };
@@ -266,7 +266,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["OperatorCredential"];
+                "application/json": components["schemas"]["AuthenticateRequest"];
             };
         };
         responses: {
