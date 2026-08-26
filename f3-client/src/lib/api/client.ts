@@ -77,6 +77,27 @@ api.use({
   },
 });
 
+/**
+ * f3-server の共通レスポンス封筒（envelope）。
+ * サーバは全エンドポイントのボディを
+ *   `{ "result": "OK" | "ERROR", "status_code": number, "data": <payload> }`
+ * の形で返すようになった。実データは常に `data` フィールドの下にネストされる。
+ *
+ * openapi.json にはこの封筒もレスポンススキーマも定義されていないため、
+ * サーバ実装（ApiResponse）に合わせて手動定義する。
+ */
+export type ApiEnvelope<T> = {
+  result: "OK" | "ERROR";
+  status_code: number;
+  data: T;
+};
+
+/**
+ * openapi-fetch が返すボディ（= 封筒）から実データ（`data`）を取り出す。
+ * 実装は純粋関数として ./envelope.js に切り出し、単体テスト可能にしている。
+ */
+export { unwrap } from "./envelope.js";
+
 // ---- openapi.json 由来のリクエスト型エイリアス ----
 export type AuthenticateRequest = components["schemas"]["AuthenticateRequest"];
 export type GetOperatorRequest = components["schemas"]["GetOperatorRequest"];
