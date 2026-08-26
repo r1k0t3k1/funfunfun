@@ -45,7 +45,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/OperatorCredential"
+                "$ref": "#/components/schemas/AuthenticateRequest"
               }
             }
           },
@@ -256,6 +256,21 @@
   },
   "components": {
     "schemas": {
+      "AuthenticateRequest": {
+        "type": "object",
+        "required": [
+          "operator_id",
+          "password"
+        ],
+        "properties": {
+          "operator_id": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
       "CreateListenerRequest": {
         "type": "object",
         "required": [
@@ -322,21 +337,6 @@
           "HTTP",
           "HTTPS"
         ]
-      },
-      "OperatorCredential": {
-        "type": "object",
-        "required": [
-          "username",
-          "password"
-        ],
-        "properties": {
-          "password": {
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          }
-        }
       },
       "RemoveListenerRequest": {
         "type": "object",

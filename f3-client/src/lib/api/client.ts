@@ -78,7 +78,7 @@ api.use({
 });
 
 // ---- openapi.json 由来のリクエスト型エイリアス ----
-export type OperatorCredential = components["schemas"]["OperatorCredential"];
+export type AuthenticateRequest = components["schemas"]["AuthenticateRequest"];
 export type GetOperatorRequest = components["schemas"]["GetOperatorRequest"];
 export type CreateListenerRequest =
   components["schemas"]["CreateListenerRequest"];
