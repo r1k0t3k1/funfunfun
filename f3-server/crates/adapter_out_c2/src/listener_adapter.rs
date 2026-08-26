@@ -49,6 +49,9 @@ impl ListenerControllerPort for ListenerAdapter {
         self.c2_manager_handle
             .remove_listener(listener_id)
             .await
-            .map_err(|e| C2Error::Unexpected(e))
+            .map_err(|e| {
+                log::error!("{e}");
+                return C2Error::Unexpected(e);
+            })
     }
 }

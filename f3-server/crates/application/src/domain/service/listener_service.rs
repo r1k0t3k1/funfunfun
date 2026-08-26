@@ -62,7 +62,10 @@ impl ListenerUsecase for ListenerService {
         listener_controller
             .remove(listener_id)
             .await
-            .map_err(|_| ListenerUsecaseError::FailedToRemove)
+            .map_err(|e| {
+                log::error!("{e}");
+                return ListenerUsecaseError::FailedToRemove;
+            })
     }
 }
 

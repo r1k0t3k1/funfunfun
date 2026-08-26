@@ -25,6 +25,9 @@ pub struct HttpListener {
 
 impl Drop for HttpListener {
     fn drop(&mut self) {
+        if let Some(handle) = self.handle.take() {
+            tokio::spawn(handle.stop(true));
+        }
     }
 }
 
@@ -47,6 +50,7 @@ impl HttpListener {
                 .app_data(web::Data::new(sender.clone()))
                 .route("/favicon.ico", web::post().to(dispatch))
             })
+            .workers(1)
             .bind(self.addr)?
             .shutdown_timeout(10)
             .disable_signals()
@@ -58,11 +62,11 @@ impl HttpListener {
         Ok(())
     }
 
-    pub fn stop(&mut self) -> anyhow::Result<()> { 
-        let handle = self.handle.clone()
+    pub async fn stop(&mut self) -> anyhow::Result<()> { 
+        let handle = self.handle.take()
             .ok_or_else(|| anyhow!("Listener not started"))?;
 
-        tokio::spawn(tokio::time::timeout(Duration::from_secs(5), handle.stop(true)));
+        let _ = tokio::spawn(tokio::time::timeout(Duration::from_secs(5), handle.stop(true))).await;
         Ok(())
     }
 }
@@ -111,8 +115,8 @@ impl ListenerPort for HttpListener {
         self.spawn()
     }
 
-    fn stop(&mut self) -> anyhow::Result<()> {
-        self.stop()
+    async fn stop(&mut self) -> anyhow::Result<()> {
+        self.stop().await
     }
 
     fn list_agents(&self) -> Vec<Agent> {

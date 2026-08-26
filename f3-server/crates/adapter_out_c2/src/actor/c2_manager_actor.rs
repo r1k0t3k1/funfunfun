@@ -66,12 +66,8 @@ impl C2ManagerActor {
                 let _ = l.sender.send(msg);
             },
             C2InnerMessage::RemoveListener { listener_id, reply } => {
-                let Some(l) = self.listener_handles.get(&listener_id) else {
-                    let _ = reply.send(Err(anyhow!("Listener not found: {listener_id}")));
-                    return;
-                };
-                let msg = C2InnerMessage::RemoveListener { listener_id, reply };
-                let _ = l.sender.send(msg);
+                let _ = self.listener_handles.remove(&listener_id);
+                let _ = reply.send(Ok(()));
             },
             C2InnerMessage::ListenerRequestReceived => { log::info!("listner requesst received") },
         }
@@ -128,10 +124,15 @@ impl C2ManagerHandle {
     }
 
     pub async fn remove_listener(&self, listener_id: ListenerId) -> anyhow::Result<()> {
+        //let (reply, rx) = oneshot::channel();
+        //let msg = C2InnerMessage::StopListener { listener_id, reply };
+        //let _ = self.sender.send(msg);
+        //let _ = rx.await?;
+
         let (reply, rx) = oneshot::channel();
         let msg = C2InnerMessage::RemoveListener { listener_id, reply };
         let _ = self.sender.send(msg);
-        
+
         rx.await?
     }
 }

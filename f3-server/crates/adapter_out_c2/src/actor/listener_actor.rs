@@ -33,7 +33,7 @@ impl ListenerActor {
                 let _ = reply.send(self.listener.lock().await.start());
             },
             C2InnerMessage::StopListener { listener_id, reply } => {
-                let _ = reply.send(self.listener.lock().await.stop());
+                let _ = reply.send(self.listener.lock().await.stop().await);
             },
             _ => {},
         }
