@@ -1,3 +1,4 @@
+use actix_web::{App, HttpResponse, HttpServer, Responder, dev::ServerHandle, http::StatusCode, web};
 use anyhow::anyhow;
 use application::{
     domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol},
@@ -6,136 +7,70 @@ use application::{
         listener::ListenerPort,
     },
 };
-use http_body_util::Full;
-use hyper::body::{Bytes, Incoming};
-use hyper::server::conn::http1;
-use hyper::service::service_fn;
-use hyper::{Request, Response, StatusCode};
-use hyper_util::rt::TokioIo;
-use hyper_util::server::graceful::GracefulShutdown;
-use std::convert::Infallible;
 use std::net::SocketAddr;
-use std::pin::pin;
-use std::sync::Arc;
 use std::time::Duration;
-use tokio::net::TcpListener;
-use tokio::sync::Mutex;
-use tokio::task::JoinHandle;
-use tokio_util::sync::CancellationToken;
+use tokio::sync::mpsc::{self, UnboundedSender};
 use uuid::Uuid;
+
+use crate::c2_inner_message::C2InnerMessage;
 
 pub struct HttpListener {
     pub id: Uuid,
     pub name: String,
     pub addr: SocketAddr,
     pub protocol: ListenerProtocol,
-    pub join_handle: Option<JoinHandle<()>>,
-    pub cancel_token: CancellationToken,
+    pub handle: Option<ServerHandle>,
+    pub sender: mpsc::UnboundedSender<C2InnerMessage>,
 }
 
 impl Drop for HttpListener {
     fn drop(&mut self) {
-        self.cancel_token.cancel();
     }
 }
 
 impl HttpListener {
-    pub fn new(name: String, addr: SocketAddr, protocol: ListenerProtocol) -> Self {
+    pub fn new(name: String, addr: SocketAddr, protocol: ListenerProtocol, sender: mpsc::UnboundedSender<C2InnerMessage>) -> Self {
         Self {
             id: Uuid::new_v4(),
             name,
             addr,
             protocol,
-            join_handle: None,
-            cancel_token: CancellationToken::new(),
+            handle: None,
+            sender,
         }
     }
 
-    async fn run_http(
-        id: ListenerId,
-        addr: SocketAddr,
-        cancel_token: CancellationToken,
-    ) -> anyhow::Result<()> {
-        let listener = TcpListener::bind(addr)
-            .await
-            .map_err(|e| anyhow!("HTTP Listener {} failed to bind address {}", id, addr))?;
-
-        let http = http1::Builder::new();
-        let graceful = GracefulShutdown::new();
-        let mut shutdown = pin!(cancel_token.cancelled());
-
-        loop {
-            tokio::select! {
-                accepted = listener.accept() => {
-                    let (stream, _) = match accepted {
-                        Ok(v) => v,
-                        Err(e) => {
-                            log::error!("accept error: {e}");
-                            continue;
-                        }
-                    };
-
-                    let io = TokioIo::new(stream);
-
-                    let svc = service_fn(move |req| {
-                        async move { handle_request(req).await }
-                    });
-
-
-                    let conn = http.serve_connection(io, svc);
-                    let fut = graceful.watch(conn);
-
-                    tokio::spawn(async move {
-                        if let Err(e) = fut.await {
-                            log::error!("connection error: {e}");
-                        }
-                    });
-                }
-                _ = &mut shutdown => {
-                    log::info!("HTTP listener on {}: shutdown signal received", id);
-                    break;
-                }
-
-            }
-        }
-
-        drop(listener);
-
-        tokio::select! {
-            _ = graceful.shutdown() => {
-                log::info!("HTTP listener {}: all connections drained", id);
-            }
-            _ = tokio::time::sleep(Duration::from_secs(4)) => {
-                log::warn!("HTTP listener {}: graceful shutdown timed out", id);
-            }
-        }
+    pub fn spawn(&mut self) -> anyhow::Result<()> {
+        let sender = self.sender.clone();
+        let server = HttpServer::new(move || { 
+            App::new()
+                .app_data(web::Data::new(sender.clone()))
+                .route("/favicon.ico", web::post().to(dispatch))
+            })
+            .bind(self.addr)?
+            .shutdown_timeout(10)
+            .disable_signals()
+            .run();
+        
+        let handle = server.handle();
+        let _server_task = tokio::spawn(server);
+        self.handle = Some(handle);
         Ok(())
     }
 
-    pub async fn spawn_server(listener_arc: Arc<Mutex<dyn ListenerPort>>) -> anyhow::Result<()> {
-        let (id, addr, cancel_token) = {
-            let mut l = listener_arc.lock().await;
-            (l.id(), l.addr(), l.get_cancel_token().clone()) // CancellationToken は Clone 可
-        };
+    pub fn stop(&mut self) -> anyhow::Result<()> { 
+        let handle = self.handle.clone()
+            .ok_or_else(|| anyhow!("Listener not started"))?;
 
-        let handle = tokio::spawn({
-            async move {
-                if let Err(e) = Self::run_http(id, addr, cancel_token).await {
-                    log::error!("HTTP Listener error: {e}")
-                }
-            }
-        });
-
-        log::info!("HTTP Listener {id} started at {addr}");
-        listener_arc.lock().await.set_join_handle(handle);
+        tokio::spawn(tokio::time::timeout(Duration::from_secs(5), handle.stop(true)));
         Ok(())
     }
 }
 
-impl From<ListenerModel> for HttpListener {
-    fn from(value: ListenerModel) -> Self {
-        HttpListener::new(value.name, value.addr, value.protocol)
-    }
+async fn dispatch(sender: web::Data<UnboundedSender<C2InnerMessage>>) -> impl Responder {
+    log::info!("test");
+    let _ = sender.send(C2InnerMessage::ListenerRequestReceived);
+    HttpResponse::new(StatusCode::TEMPORARY_REDIRECT)
 }
 
 impl Into<ListenerModel> for &HttpListener {
@@ -172,30 +107,12 @@ impl ListenerPort for HttpListener {
         }
     }
 
-    async fn stop(&mut self) -> anyhow::Result<()> {
-        let handle = self
-            .join_handle
-            .take()
-            .ok_or_else(|| anyhow!("Listener {} is not runnning", self.id))?;
-
-        self.cancel_token.cancel();
-
-        tokio::time::timeout(Duration::from_secs(5), handle)
-            .await
-            .map_err(|_| anyhow::anyhow!("Listener {} did not stop within 5s", self.id))?
-            .map_err(|e| anyhow::anyhow!("Listener task panicked: {e}"))?;
-
-        log::info!("HTTP Listener {} stopped", self.id);
-        Ok(())
+    fn start(&mut self) -> anyhow::Result<()> {
+        self.spawn()
     }
 
-    fn set_join_handle(&mut self, join_handle: JoinHandle<()>) {
-        self.join_handle = Some(join_handle);
-    }
-
-    // TODO cancel_tokenを外から使う必要あるか？
-    fn get_cancel_token(&mut self) -> CancellationToken {
-        self.cancel_token.clone()
+    fn stop(&mut self) -> anyhow::Result<()> {
+        self.stop()
     }
 
     fn list_agents(&self) -> Vec<Agent> {
@@ -215,9 +132,3 @@ impl ListenerPort for HttpListener {
     }
 }
 
-async fn handle_request(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
-    Ok(Response::builder()
-        .status(StatusCode::NOT_FOUND)
-        .body(Full::new(Bytes::new()))
-        .unwrap())
-}

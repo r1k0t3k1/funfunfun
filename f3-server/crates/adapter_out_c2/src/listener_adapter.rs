@@ -31,15 +31,24 @@ impl ListenerControllerPort for ListenerAdapter {
             .map_err(|e| C2Error::Unexpected(e))
     }
 
-    async fn start(&self, listener_id: Uuid) -> anyhow::Result<()> {
-        todo!()
+    async fn start(&self, listener_id: Uuid) -> Result<(), C2Error> {
+        self.c2_manager_handle
+            .start_listener(listener_id)
+            .await
+            .map_err(|e| C2Error::Unexpected(e))
     }
 
-    async fn stop(&self, listener_id: Uuid) -> anyhow::Result<()> {
-        todo!()
+    async fn stop(&self, listener_id: Uuid) -> Result<(), C2Error> {
+        self.c2_manager_handle
+            .stop_listener(listener_id)
+            .await
+            .map_err(|e| C2Error::Unexpected(e))
     }
 
-    async fn remove(&self, listener_id: Uuid) -> anyhow::Result<()> {
-        todo!()
+    async fn remove(&self, listener_id: Uuid) -> Result<(), C2Error> {
+        self.c2_manager_handle
+            .remove_listener(listener_id)
+            .await
+            .map_err(|e| C2Error::Unexpected(e))
     }
 }

@@ -27,4 +27,5 @@ pub enum C2InnerMessage {
         listener_id: Uuid,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
+    ListenerRequestReceived,
 }

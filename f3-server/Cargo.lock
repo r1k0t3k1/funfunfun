@@ -305,6 +305,7 @@ dependencies = [
 name = "adapter_out_c2"
 version = "0.1.0"
 dependencies = [
+ "actix-web",
  "anyhow",
  "application",
  "async-trait",
