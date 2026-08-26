@@ -326,14 +326,14 @@
       "OperatorCredential": {
         "type": "object",
         "required": [
-          "username",
+          "operator_id",
           "password"
         ],
         "properties": {
-          "password": {
+          "operator_id": {
             "type": "string"
           },
-          "username": {
+          "password": {
             "type": "string"
           }
         }

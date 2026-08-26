@@ -203,8 +203,8 @@ export interface components {
         /** @enum {string} */
         ListenerType: "TCP" | "HTTP" | "HTTPS";
         OperatorCredential: {
+            operator_id: string;
             password: string;
-            username: string;
         };
         RemoveListenerRequest: {
             listener_id: string;
