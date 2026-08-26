@@ -1,6 +1,5 @@
 use anyhow::anyhow;
 use application::domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol};
-use application::outbound::c2_manager::C2Manager;
 use application::outbound::listener::ListenerPort;
 use std::sync::Arc;
 use std::{collections::HashMap, net::SocketAddr};

@@ -24,6 +24,7 @@ pub async fn list_listeners(state: web::Data<AppState>) -> Result<impl Responder
         .listener_usecase
         .list_listeners()
         .await
+        .map_err(|e| ApiError::NotFound)?
         .iter()
         .map(|l| l.clone().into())
         .collect::<Vec<ListenerResponse>>();
@@ -58,7 +59,7 @@ pub async fn create_listener(
             protocol,
         )
         .await
-        .map(|result| ResponseBody::ok(StatusCode::OK, result))
+        .map(|result| ResponseBody::ok(StatusCode::OK, ListenerResponse::from(result)))
         .map_err(|_| ApiError::InternelServerError) // TODO
 }
 

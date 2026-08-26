@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use adapter_in_web::server::run;
 use adapter_in_web::state::AppState;
-use adapter_out_c2::c2_manager::C2ManagerImpl;
+use adapter_out_c2::actor::c2_manager_actor::C2ManagerHandle;
+use adapter_out_c2::listener_adapter::ListenerAdapter;
 use adapter_out_persistence::password_hasher_impl::Argon2PasswordHasher;
 use adapter_out_persistence::repository::operator_repository_impl::OperatorRepositoryImpl;
 use adapter_out_persistence::repository::session_repository_impl::SessionRepositoryImpl;
@@ -36,9 +37,10 @@ async fn main() -> std::io::Result<()> {
         session_repository_impl.clone(),
         password_hasher.clone(),
     ));
-
-    let c2_manager = Arc::new(Mutex::new(C2ManagerImpl::new()));
-    let listener_service = Arc::new(ListenerService::new(c2_manager));
+    
+    let c2_manager_handle = C2ManagerHandle::new();
+    let listner_adapter = Arc::new(Mutex::new(ListenerAdapter::new(c2_manager_handle)));
+    let listener_service = Arc::new(ListenerService::new(listner_adapter));
 
     let operator_service = Arc::new(OperatorService::new(operator_repository_impl));
 

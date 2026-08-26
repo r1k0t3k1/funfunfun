@@ -45,7 +45,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/OperatorCredential"
+                "$ref": "#/components/schemas/AuthenticateRequest"
               }
             }
           },
@@ -136,7 +136,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListListenerResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListenerResponse"
+                  }
                 }
               }
             }
@@ -255,21 +258,21 @@
       }
     },
     "/operator/get": {
-      "post": {
+      "get": {
         "tags": [
           "crate::controller::operator_controller"
         ],
         "operationId": "get_operator",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetOperatorRequest"
-              }
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
-          },
-          "required": true
-        },
+          }
+        ],
         "responses": {
           "200": {
             "description": "オペレータ詳細情報"
@@ -283,7 +286,7 @@
       }
     },
     "/operator/list": {
-      "post": {
+      "get": {
         "tags": [
           "crate::controller::operator_controller"
         ],
@@ -333,6 +336,21 @@
   },
   "components": {
     "schemas": {
+      "AuthenticateRequest": {
+        "type": "object",
+        "required": [
+          "operator_id",
+          "password"
+        ],
+        "properties": {
+          "operator_id": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
       "CreateListenerRequest": {
         "type": "object",
         "required": [
@@ -358,18 +376,7 @@
           }
         }
       },
-      "GetOperatorRequest": {
-        "type": "object",
-        "required": [
-          "operator_id"
-        ],
-        "properties": {
-          "operator_id": {
-            "type": "string"
-          }
-        }
-      },
-      "ListListenerResponse": {
+      "ListenerResponse": {
         "type": "object",
         "required": [
           "id",
@@ -399,21 +406,6 @@
           "HTTP",
           "HTTPS"
         ]
-      },
-      "OperatorCredential": {
-        "type": "object",
-        "required": [
-          "username",
-          "password"
-        ],
-        "properties": {
-          "password": {
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          }
-        }
       },
       "RemoveListenerRequest": {
         "type": "object",
