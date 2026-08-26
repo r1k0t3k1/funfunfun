@@ -155,9 +155,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["get_operator"];
         put?: never;
-        post: operations["get_operator"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -171,9 +171,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get: operations["list_operators"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/operator/toggle_status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         get?: never;
         put?: never;
-        post: operations["list_operators"];
+        post: operations["toggle_operator_status"];
         delete?: never;
         options?: never;
         head?: never;
@@ -195,10 +211,7 @@ export interface components {
             name: string;
             protocol: components["schemas"]["ListenerType"];
         };
-        GetOperatorRequest: {
-            operator_id: string;
-        };
-        ListListenerResponse: {
+        ListenerResponse: {
             addr: string;
             id: string;
             name: string;
@@ -214,6 +227,9 @@ export interface components {
         };
         StopListenerRequest: {
             listener_id: string;
+        };
+        ToggleOperatorStatusRequest: {
+            operator_id: string;
         };
         UploadFile: {
             data: string;
@@ -373,7 +389,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListListenerResponse"];
+                    "application/json": components["schemas"]["ListenerResponse"][];
                 };
             };
             /** @description ハンドリングできない異常 */
@@ -474,16 +490,14 @@ export interface operations {
     };
     get_operator: {
         parameters: {
-            query?: never;
+            query: {
+                operator_id: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetOperatorRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description オペレータ詳細情報 */
             200: {
@@ -504,6 +518,28 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description オペレータ一覧 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    toggle_operator_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToggleOperatorStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description 有効化状態変更完了 */
             200: {
                 headers: {
                     [name: string]: unknown;

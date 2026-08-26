@@ -100,7 +100,6 @@ export { unwrap } from "./envelope.js";
 
 // ---- openapi.json 由来のリクエスト型エイリアス ----
 export type AuthenticateRequest = components["schemas"]["AuthenticateRequest"];
-export type GetOperatorRequest = components["schemas"]["GetOperatorRequest"];
 export type CreateListenerRequest =
   components["schemas"]["CreateListenerRequest"];
 export type RemoveListenerRequest =
@@ -109,6 +108,9 @@ export type StartListenerRequest =
   components["schemas"]["StartListenerRequest"];
 export type StopListenerRequest = components["schemas"]["StopListenerRequest"];
 export type ListenerType = components["schemas"]["ListenerType"];
+// /operator/toggle_status のリクエスト型（operator_id のみ）。
+export type ToggleOperatorStatusRequest =
+  components["schemas"]["ToggleOperatorStatusRequest"];
 
 /**
  * /auth/login のレスポンス。
@@ -121,16 +123,11 @@ export type AuthenticatedResponse = {
 
 /**
  * /listener/list のレスポンス要素。
- * openapi.json にレスポンススキーマが定義されていないため、
- * サーバの ListListenerResponse に合わせて手動定義する。
- * サーバ側で `id`（識別子）と `protocol`（種別）が追加されたため追従する。
+ * openapi.json に `ListenerResponse` スキーマが定義されたため、
+ * 生成型（./schema.d.ts）をそのまま利用する。
+ * （レスポンスは配列 `ListenerResponse[]` を封筒に包んで返る）
  */
-export type ListenerListItem = {
-  id: string;
-  name: string;
-  addr: string;
-  protocol: string;
-};
+export type ListenerListItem = components["schemas"]["ListenerResponse"];
 
 /**
  * オペレータの権限ロール。
@@ -148,4 +145,6 @@ export type OperatorResponse = {
   name: string;
   description: string;
   role: OperatorRole;
+  /** アカウントが有効化されているか（/operator/toggle_status で切り替え）。 */
+  is_enabled: boolean;
 };
