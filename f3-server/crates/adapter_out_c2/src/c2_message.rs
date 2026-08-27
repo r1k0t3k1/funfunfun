@@ -1,8 +1,7 @@
 use std::net::SocketAddr;
 
-use application::domain::model::listener_model::{ListenerModel, ListenerProtocol};
+use application::{domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol}, outbound::agent::AgentId};
 use tokio::sync::oneshot;
-use uuid::Uuid;
 
 pub enum C2Message {
     Listener(ListenerMessage),
@@ -10,30 +9,59 @@ pub enum C2Message {
 }
 
 pub enum ListenerMessage {
-    ListListener {
+    List {
         reply: oneshot::Sender<anyhow::Result<Vec<ListenerModel>>>,
     },
-    AddListener {
+    Add {
         name: String,
         addr: SocketAddr,
         protocol: ListenerProtocol,
         reply: oneshot::Sender<anyhow::Result<ListenerModel>>,
     },
-    StartListener {
-        listener_id: Uuid,
+    Start {
+        listener_id: ListenerId,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
-    StopListener {
-        listener_id: Uuid,
+    Stop {
+        listener_id: ListenerId,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
-    RemoveListener {
-        listener_id: Uuid,
+    Remove {
+        listener_id: ListenerId,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
-    ListenerRequestReceived,
-
+    Query {
+        listener_id: ListenerId,
+        agent_id: AgentId,
+        reply: oneshot::Sender<anyhow::Result<[u8;32]>>,
+    },
+    AgentCheckinReceived {
+        listener_id: ListenerId,
+        agent_id: AgentId,
+        agent_pubkey: [u8; 32],
+    },
+    AgentCheckinCompleted {
+        listener_id: ListenerId,
+        agent_id: AgentId
+    },
+    CheckinAgent {
+        agent_id: AgentId,
+        agent_pubkey: [u8; 32],
+    },
+    CompleteCheckinAgent {
+        listener_id: ListenerId,
+        agent_id: AgentId
+    },
+    QuerySecret {
+        listener_id: ListenerId,
+        agent_id: AgentId,
+        reply: oneshot::Sender<anyhow::Result<[u8;32]>>,
+    },
 }
 
 pub enum AgentMessage {
+    CheckinComplete,
+    QuerySecret {
+        reply: oneshot::Sender<anyhow::Result<[u8;32]>>,
+    }
 }

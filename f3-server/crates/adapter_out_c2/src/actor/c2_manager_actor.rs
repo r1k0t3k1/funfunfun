@@ -36,7 +36,7 @@ impl C2ManagerActor {
 
     fn handle_listener_message(&mut self, msg: ListenerMessage) {
         match msg {
-            ListenerMessage::ListListener { reply } => {
+            ListenerMessage::List { reply } => {
                 let listeners = self.listener_handles
                     .values()
                     .into_iter()
@@ -45,33 +45,54 @@ impl C2ManagerActor {
 
                 let _ = reply.send(Ok(listeners));
             },
-            ListenerMessage::AddListener { name, addr, protocol, reply } => {
+            ListenerMessage::Add { name, addr, protocol, reply } => {
                 let id = Uuid::new_v4();
                 let listener_handle = ListenerHandle::new(id, name.clone(), addr, protocol.clone(), self.sender.clone());
                 self.listener_handles.insert(id, listener_handle);
                 let _ = reply.send(Ok(ListenerModel::new(id, name, addr, protocol)));
             },
-            ListenerMessage::StartListener { listener_id, reply } => {
+            ListenerMessage::Start { listener_id, reply } => {
                 let Some(l) = self.listener_handles.get(&listener_id) else {
                     let _ = reply.send(Err(anyhow!("Listener not found: {listener_id}")));
                     return;
                 };
-                let msg = ListenerMessage::StartListener { listener_id, reply };
+                let msg = ListenerMessage::Start { listener_id, reply };
                 let _ = l.sender.send(msg);
             },
-            ListenerMessage::StopListener { listener_id, reply } => {
+            ListenerMessage::Stop { listener_id, reply } => {
                 let Some(l) = self.listener_handles.get(&listener_id) else {
                     let _ = reply.send(Err(anyhow!("Listener not found: {listener_id}")));
                     return;
                 };
-                let msg = ListenerMessage::StopListener { listener_id, reply };
+                let msg = ListenerMessage::Stop { listener_id, reply };
                 let _ = l.sender.send(msg);
             },
-            ListenerMessage::RemoveListener { listener_id, reply } => {
+            ListenerMessage::Remove { listener_id, reply } => {
                 let _ = self.listener_handles.remove(&listener_id);
                 let _ = reply.send(Ok(()));
             },
-            ListenerMessage::ListenerRequestReceived => { log::info!("listner requesst received"); todo!() },
+            ListenerMessage::AgentCheckinReceived { listener_id, agent_id, agent_pubkey } => {
+                let Some(l) = self.listener_handles.get(&listener_id) else {
+                    return;
+                };
+                let _ = l.sender.send(ListenerMessage::CheckinAgent { agent_id, agent_pubkey });
+            },
+            ListenerMessage::AgentCheckinCompleted { listener_id, agent_id } => {
+                let Some(l) = self.listener_handles.get(&listener_id) else {
+                    return;
+                };
+                let _ = l.sender.send(ListenerMessage::CompleteCheckinAgent { listener_id, agent_id });
+            },
+            ListenerMessage::QuerySecret { listener_id, agent_id, reply } => {
+                let Some(l) = self.listener_handles.get(&listener_id) else {
+                    return;
+                };
+                let _ = l.sender.send(ListenerMessage::Query { listener_id, agent_id, reply });
+
+            },
+            ListenerMessage::CheckinAgent { agent_id, agent_pubkey } => unreachable!(),
+            ListenerMessage::CompleteCheckinAgent { listener_id, agent_id } => unreachable!(),
+            ListenerMessage::Query { listener_id, agent_id, reply } => todo!(),
         }
     }
 
@@ -99,7 +120,7 @@ impl C2ManagerHandle {
         protocol: ListenerProtocol, 
     ) -> anyhow::Result<ListenerModel> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::Listener(ListenerMessage::AddListener { name, addr, protocol, reply });
+        let msg = C2Message::Listener(ListenerMessage::Add { name, addr, protocol, reply });
         let _ = self.sender.send(msg);
         
         rx.await?
@@ -107,7 +128,7 @@ impl C2ManagerHandle {
 
     pub async fn list_listener(&self) -> anyhow::Result<Vec<ListenerModel>> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::Listener(ListenerMessage::ListListener { reply });
+        let msg = C2Message::Listener(ListenerMessage::List { reply });
         let _ = self.sender.send(msg);
 
         rx.await?
@@ -115,7 +136,7 @@ impl C2ManagerHandle {
 
     pub async fn start_listener(&self, listener_id: ListenerId) -> anyhow::Result<()> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::Listener(ListenerMessage::StartListener { listener_id, reply });
+        let msg = C2Message::Listener(ListenerMessage::Start { listener_id, reply });
         let _ = self.sender.send(msg);
         
         rx.await?
@@ -123,7 +144,7 @@ impl C2ManagerHandle {
 
     pub async fn stop_listener(&self, listener_id: ListenerId) -> anyhow::Result<()> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::Listener(ListenerMessage::StopListener { listener_id, reply });
+        let msg = C2Message::Listener(ListenerMessage::Stop { listener_id, reply });
         let _ = self.sender.send(msg);
         
         rx.await?
@@ -131,7 +152,7 @@ impl C2ManagerHandle {
 
     pub async fn remove_listener(&self, listener_id: ListenerId) -> anyhow::Result<()> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::Listener(ListenerMessage::RemoveListener { listener_id, reply });
+        let msg = C2Message::Listener(ListenerMessage::Remove { listener_id, reply });
         let _ = self.sender.send(msg);
 
         rx.await?

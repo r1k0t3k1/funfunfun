@@ -1,10 +1,8 @@
 use anyhow::anyhow;
-use crypto::aead::{AeadDecryptor,AeadEncryptor};
-use domain::agent::AgentEvent;
+use application::outbound::agent::{AgentEvent, AgentId};
+use chacha20poly1305::{ChaCha20Poly1305, Key, Nonce, aead::{Aead, KeyInit, Payload}};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-pub type ListenerId = String;
-pub type AgentId = String;
 
 const MAGIC_NUMBER: u16 = 0xf3f3;
 const NONCE_LEN: usize = 12;
@@ -12,17 +10,19 @@ const LENGTH_LEN: usize = 8;
 const AAD_LEN: usize = NONCE_LEN + LENGTH_LEN;
 const TAG_LEN: usize = 16;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Packet {
     pub magic: u16,
+    pub agent_id: [u8;16],
     pub length: u64,
     pub body: Body,
 }
 
 impl Packet {
-    pub fn new(inner_packet: Vec<Tlv>) -> Self {
+    pub fn new(inner_packet: Vec<Tlv>, agent_id: AgentId) -> Self {
         Self { 
             magic: MAGIC_NUMBER,
+            agent_id: agent_id.into_bytes(),
             length: serde_cbor::to_vec(&inner_packet).unwrap().len() as u64, // TODO
             body: Body::Plain(inner_packet),
         }
@@ -31,22 +31,24 @@ impl Packet {
 
     pub fn encrypt(&mut self, key: [u8; 32]) -> Result<(), anyhow::Error>{
         match &self.body {
-            Body::Encrypted {nonce: _, cipher_text: _, tag: _} => return Err(anyhow!("Packet already encrypted")),
+            Body::Encrypted {nonce: _, cipher_text: _, tag: _} => return Err(anyhow::anyhow!("Packet already encrypted")),
             Body::Plain(plain_tlv) => {
                 let mut nonce = [0_u8; NONCE_LEN];
                 rand::rng().fill_bytes(&mut nonce);
                 let plain = serde_cbor::to_vec(&plain_tlv)
-                    .map_err(|e| anyhow!("{e}"))?;
+                    .map_err(|e| anyhow::anyhow!("{e}"))?;
 
-                let mut chacha20 = crypto::chacha20poly1305::ChaCha20Poly1305::new(
-                    &key,
-                    &nonce,
-                    &vec![],
-                );
 
-                let mut encrypted = vec![];
-                let mut tag = vec![];
-                chacha20.encrypt(&plain, &mut encrypted, &mut tag);
+                let cipher = ChaCha20Poly1305::new(Key::from_slice(&key));
+                let nonce = Nonce::from_slice(&nonce); // 12 バイト
+                println!("plain.len() = {}", plain.len());
+                let cipher_text = cipher.encrypt(nonce, Payload { msg: &plain, aad: &[] })
+                    .map_err(|e| anyhow::anyhow!("encrypt failed: {e}"))?;
+                self.body = Body::Encrypted {
+                    nonce: Into::<[u8; 12]>::into(*nonce),
+                    cipher_text,
+                    tag: [0_u8; 16],
+                };
             },
         };
 
@@ -55,17 +57,15 @@ impl Packet {
     
     pub fn decrypt(&mut self, key: [u8; 32]) -> Result<Vec<Tlv>, anyhow::Error> {
         match &self.body {
-            Body::Plain(_) => return Err(anyhow!("Packet already decrypted")),
-            Body::Encrypted {nonce, cipher_text, tag} => {
-                let mut chacha20 = crypto::chacha20poly1305::ChaCha20Poly1305::new(
-                    &key,
-                    nonce,
-                    &vec![],
-                );
-                let mut buf = vec![];
-                chacha20.decrypt(cipher_text, &mut buf, tag);
-                let tlv = serde_cbor::from_slice(&buf)
-                    .map_err(|e| anyhow!("{e}"))?;
+            Body::Plain(_) => return Err(anyhow::anyhow!("Packet already decrypted")),
+            Body::Encrypted { nonce, cipher_text, tag: _ } => {
+                let cipher = ChaCha20Poly1305::new(Key::from_slice(&key));
+
+                let plain = cipher.decrypt(nonce.into(), cipher_text.as_ref())
+                    .map_err(|e| anyhow::anyhow!("decrypt failed: {e}"))?;
+
+                let tlv = serde_cbor::from_slice(&plain)
+                    .map_err(|e| anyhow::anyhow!("{e}"))?;
                 Ok(tlv)
             }
         }
@@ -101,7 +101,7 @@ impl TryInto<AgentEvent> for Tlv {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Body {
     Plain(Vec<Tlv>),
     Encrypted {
@@ -143,20 +143,25 @@ pub struct CheckinResponse { // ここのみ平文
 }
 
 impl CheckinResponse {
-    fn new() -> Self {
-        let mut listener_pubkey = [0_u8; 32];
-        rand::rng().fill_bytes(&mut listener_pubkey);
+    pub fn new(listener_pubkey: [u8; 32]) -> Self {
         Self { listener_pubkey } 
     }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CheckinCompleteRequest { 
+    pub agent_id: String, 
     pub agent_info: String, // 共通鍵で暗号化したホストの情報などを送る // TODO
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CheckinCompleteResponse { // ↑が復号できればCheckin完了、サーバ側でAgent登録
-    pub listener_id: ListenerId,
-    pub agent_id: AgentId,
+    pub listener_id: String,
+    pub agent_id: String,
+}
+
+impl CheckinCompleteResponse {
+    pub fn new(listener_id: String, agent_id: String) -> Self {
+        Self { listener_id, agent_id } 
+    }
 }
