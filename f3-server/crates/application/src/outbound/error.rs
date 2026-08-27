@@ -8,3 +8,18 @@ pub enum RepositoryError {
     #[error("infrastructure failure")]
     Infrastructure(#[source] Box<dyn std::error::Error + Send + Sync>),
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum HashError {
+    #[error("password hashing failed")]
+    HashingFailed,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum C2Error {
+    #[error("Listener {id} not found")]
+    NotFound{id : String},
+
+    #[error(transparent)]
+    Unexpected(#[from] anyhow::Error),
+}

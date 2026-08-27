@@ -1,4 +1,9 @@
-import { api, type CreateListenerRequest, type ListenerListItem } from "./client";
+import {
+  api,
+  unwrap,
+  type CreateListenerRequest,
+  type ListenerListItem,
+} from "./client";
 
 /** Listener 一覧を取得する。 */
 export async function listListeners(): Promise<ListenerListItem[]> {
@@ -6,8 +11,9 @@ export async function listListeners(): Promise<ListenerListItem[]> {
   if (error !== undefined || !response.ok) {
     throw new Error("Listener 一覧の取得に失敗しました");
   }
-  // openapi.json にレスポンススキーマが無いため any 相当。ListenerListItem[] として扱う。
-  return (data as ListenerListItem[] | undefined) ?? [];
+  // レスポンスは封筒 `{ result, status_code, data: ListenerListItem[] }`。
+  // openapi.json にスキーマが無いため封筒を剥がして ListenerListItem[] として扱う。
+  return unwrap<ListenerListItem[]>(data) ?? [];
 }
 
 /** Listener を作成する。 */

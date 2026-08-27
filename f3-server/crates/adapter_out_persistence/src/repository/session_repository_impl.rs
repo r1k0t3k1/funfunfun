@@ -1,9 +1,9 @@
-use application::port::outbound::error::RepositoryError;
 use sqlx::PgPool;
 use sqlx::postgres::types::PgHstore;
 
 use application::domain::model::session_model::Session;
-use application::port::outbound::session_repository::SessionRepository;
+use application::outbound::error::RepositoryError;
+use application::outbound::session_repository::SessionRepository;
 
 use crate::entity::session_entity::SessionEntity;
 

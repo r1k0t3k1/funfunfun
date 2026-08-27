@@ -1,4 +1,7 @@
-use crate::{domain::model::{operator_model::Operator, role_model::Role}, port::outbound::error::RepositoryError};
+use crate::{
+    domain::model::{operator_model::Operator, role_model::Role},
+    outbound::error::RepositoryError,
+};
 
 #[async_trait::async_trait]
 pub trait OperatorRepository: Send + Sync {
@@ -11,11 +14,8 @@ pub trait OperatorRepository: Send + Sync {
         name: String,
         description: String,
         role: Role,
+        is_enabled: bool,
     ) -> Result<Operator, RepositoryError>;
 
-    async fn find_by_credential(
-        &self,
-        operator_id: String,
-        password: String,
-    ) -> Result<Option<Operator>, RepositoryError>;
+    async fn save(&self, operator: Operator) -> Result<Operator, RepositoryError>;
 }

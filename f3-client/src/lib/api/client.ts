@@ -77,9 +77,29 @@ api.use({
   },
 });
 
+/**
+ * f3-server の共通レスポンス封筒（envelope）。
+ * サーバは全エンドポイントのボディを
+ *   `{ "result": "OK" | "ERROR", "status_code": number, "data": <payload> }`
+ * の形で返すようになった。実データは常に `data` フィールドの下にネストされる。
+ *
+ * openapi.json にはこの封筒もレスポンススキーマも定義されていないため、
+ * サーバ実装（ApiResponse）に合わせて手動定義する。
+ */
+export type ApiEnvelope<T> = {
+  result: "OK" | "ERROR";
+  status_code: number;
+  data: T;
+};
+
+/**
+ * openapi-fetch が返すボディ（= 封筒）から実データ（`data`）を取り出す。
+ * 実装は純粋関数として ./envelope.js に切り出し、単体テスト可能にしている。
+ */
+export { unwrap } from "./envelope.js";
+
 // ---- openapi.json 由来のリクエスト型エイリアス ----
-export type OperatorCredential = components["schemas"]["OperatorCredential"];
-export type GetOperatorRequest = components["schemas"]["GetOperatorRequest"];
+export type AuthenticateRequest = components["schemas"]["AuthenticateRequest"];
 export type CreateListenerRequest =
   components["schemas"]["CreateListenerRequest"];
 export type RemoveListenerRequest =
@@ -88,6 +108,9 @@ export type StartListenerRequest =
   components["schemas"]["StartListenerRequest"];
 export type StopListenerRequest = components["schemas"]["StopListenerRequest"];
 export type ListenerType = components["schemas"]["ListenerType"];
+// /operator/toggle_status のリクエスト型（operator_id のみ）。
+export type ToggleOperatorStatusRequest =
+  components["schemas"]["ToggleOperatorStatusRequest"];
 
 /**
  * /auth/login のレスポンス。
@@ -100,16 +123,11 @@ export type AuthenticatedResponse = {
 
 /**
  * /listener/list のレスポンス要素。
- * openapi.json にレスポンススキーマが定義されていないため、
- * サーバの ListListenerResponse に合わせて手動定義する。
- * サーバ側で `id`（識別子）と `protocol`（種別）が追加されたため追従する。
+ * openapi.json に `ListenerResponse` スキーマが定義されたため、
+ * 生成型（./schema.d.ts）をそのまま利用する。
+ * （レスポンスは配列 `ListenerResponse[]` を封筒に包んで返る）
  */
-export type ListenerListItem = {
-  id: string;
-  name: string;
-  addr: string;
-  protocol: string;
-};
+export type ListenerListItem = components["schemas"]["ListenerResponse"];
 
 /**
  * オペレータの権限ロール。
@@ -127,4 +145,6 @@ export type OperatorResponse = {
   name: string;
   description: string;
   role: OperatorRole;
+  /** アカウントが有効化されているか（/operator/toggle_status で切り替え）。 */
+  is_enabled: boolean;
 };

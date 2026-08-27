@@ -1,45 +1,110 @@
-use crate::dto::auth_dto::AuthenticatedResponse;
-use crate::dto::operator_dto::{GetOperatorRequest, OperatorResponse};
-use crate::state::AppState;
+use crate::dto::operator_dto::{
+    GetOperatorRequest, OperatorResponse, ToggleOperatorStatusRequest, UpdatePasswordRequest
+};
 use crate::error::ApiError;
-use actix_web::{HttpResponse, post, web};
+use crate::response::ResponseBody;
+use crate::state::AppState;
+use actix_web::http::StatusCode;
+use actix_web::{Responder, get, post, web};
+use application::domain::model::operator_model::Operator;
 
 #[utoipa::path(
     context_path = "/operator",
+    security(
+        ("bearer_auth" = [])
+    ),
     responses(
         (status = 200, description = "オペレータ一覧"),
     )
 )]
-#[post("/list")]
-pub async fn list_operators(
-    state: web::Data<AppState>,
-) -> Result<HttpResponse, ApiError> {
-    let operators: Vec<OperatorResponse> = state.operator_usecase.list_operators()
+#[get("/list")]
+pub async fn list_operators(state: web::Data<AppState>) -> Result<impl Responder, ApiError> {
+    let operators: Vec<OperatorResponse> = state
+        .operator_usecase
+        .list_operators()
         .await
-        .map_err(|e| ApiError::BadRequest)?
+        .map_err(|_| ApiError::InternelServerError)?
         .iter()
         .map(|o| Into::<OperatorResponse>::into(o.clone()))
         .collect();
 
-    Ok(HttpResponse::Ok().json(operators))
+    Ok(ResponseBody::ok(StatusCode::OK, operators))
 }
 
 #[utoipa::path(
     context_path = "/operator",
+    security(
+        ("bearer_auth" = [])
+    ),
+    params(GetOperatorRequest),
     responses(
         (status = 200, description = "オペレータ詳細情報"),
     )
 )]
-#[post("/get")]
+#[get("/get")]
 pub async fn get_operator(
     state: web::Data<AppState>,
-    operator: web::Json<GetOperatorRequest>,
-) -> Result<HttpResponse, ApiError> {
-    let operator = state.operator_usecase.get_operator(operator.operator_id.clone())
+    operator: web::Query<GetOperatorRequest>,
+) -> Result<impl Responder, ApiError> {
+    let operator = state
+        .operator_usecase
+        .get_operator(operator.operator_id.clone())
         .await
-        .map_err(|e| ApiError::BadRequest)?
-        .ok_or_else(|| ApiError::InternelServerError)
+        .map_err(|_| ApiError::InternelServerError)?
+        .ok_or_else(|| ApiError::NotFound)
         .map(|o| Into::<OperatorResponse>::into(o))?;
-
-    Ok(HttpResponse::Ok().json(operator))
+    
+    Ok(ResponseBody::ok(StatusCode::OK, operator))
 }
+
+#[utoipa::path(
+    context_path = "/operator",
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "パスワード変更完了"),
+    )
+)]
+#[post("/update_password")]
+pub async fn update_password(
+    state: web::Data<AppState>,
+    auth_operator: web::ReqData<Operator>,
+    request: web::Json<UpdatePasswordRequest>,
+) -> Result<impl Responder, ApiError> {
+    let operator_id = auth_operator.operator_id.clone();
+    let current_password = request.current_password.clone();
+    let new_password = request.new_password.clone();
+
+    state
+        .operator_usecase
+        .change_password(operator_id, current_password, new_password)
+        .await
+        .map(|result| ResponseBody::ok(StatusCode::OK, result))
+        .map_err(|e| ApiError::BadRequest {detail: format!("Failed to update password. inner error: {e}")})
+}
+
+#[utoipa::path(
+    context_path = "/operator",
+    security(
+        ("bearer_auth" = ["Admin"])
+    ),
+    responses(
+        (status = 200, description = "有効化状態変更完了"),
+    )
+)]
+#[post("/toggle_status")]
+pub async fn toggle_operator_status(
+    state: web::Data<AppState>,
+    request: web::Json<ToggleOperatorStatusRequest>,
+) -> Result<impl Responder, ApiError> {
+    let operator_id = request.operator_id.clone();
+
+    state
+        .operator_usecase
+        .toggle_status(operator_id)
+        .await
+        .map(|result| ResponseBody::ok(StatusCode::OK, Into::<OperatorResponse>::into(result)))
+        .map_err(|_| ApiError::InternelServerError)
+}
+

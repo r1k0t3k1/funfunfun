@@ -158,3 +158,8 @@ echo "PORT=${PORT}"
 echo "DATABASE_URL=${DATABASE_URL}"
 echo "DATABASE_NAME=${DATABASE_NAME}"
 '''
+
+[tasks.hash_password]
+command = "cargo"
+cwd = "./f3-server"
+args = ["run", "--release", "-p", "hash_password", "--quiet"]

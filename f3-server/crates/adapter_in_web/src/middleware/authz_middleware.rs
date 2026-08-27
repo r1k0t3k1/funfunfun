@@ -7,12 +7,10 @@ use actix_web::{
     Error, HttpMessage,
     dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
 };
+use application::domain::model::{operator_model::Operator, role_model::Role};
 use futures_util::future::LocalBoxFuture;
 
-use crate::{
-    dto::{operator_dto::AuthOperator, role_dto::Role},
-    error::ApiError,
-};
+use crate::error::ApiError;
 
 #[derive(Clone)]
 pub enum RoleRequirement {
@@ -23,9 +21,9 @@ pub enum RoleRequirement {
 }
 
 impl RoleRequirement {
-    pub fn check_permission(&self, operator: &AuthOperator) -> bool {
+    pub fn check_permission(&self, operator: &Operator) -> bool {
         match self {
-            Self::Is(r) => operator.has_role(r),
+            Self::Is(r) => operator.role == *r,
             Self::Not(rs) => !rs.check_permission(operator),
             Self::Any(rs) => rs.iter().any(|r| r.check_permission(operator)),
             Self::All(rs) => rs.iter().all(|r| r.check_permission(operator)),
@@ -92,10 +90,9 @@ where
         let required_role = self.role_required.clone();
 
         Box::pin(async move {
-            log::warn!("TEST");
             let operator = req
                 .extensions()
-                .get::<AuthOperator>()
+                .get::<Operator>()
                 .ok_or_else(|| ApiError::Unauthorized)?
                 .clone();
             let has_permission = required_role.check_permission(&operator);

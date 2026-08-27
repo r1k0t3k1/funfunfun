@@ -2,7 +2,8 @@ import { derived } from "svelte/store";
 import { goto } from "$app/navigation";
 import {
   api,
-  type OperatorCredential,
+  unwrap,
+  type AuthenticateRequest,
   type AuthenticatedResponse,
 } from "$lib/api/client";
 import {
@@ -22,16 +23,17 @@ export const isAuthenticated = derived(
 );
 
 /** ログイン。成功したらトークンを保存してダッシュボードへ遷移する。 */
-export async function login(credential: OperatorCredential): Promise<void> {
+export async function login(credential: AuthenticateRequest): Promise<void> {
   const { data, error, response } = await api.POST("/auth/login", {
     body: credential,
   });
   if (error !== undefined || !response.ok) {
-    throw new Error("ユーザー名またはパスワードが正しくありません");
+    throw new Error("オペレータ ID またはパスワードが正しくありません");
   }
 
-  // openapi.json にレスポンススキーマが無いため型は付かない。手動型で受ける。
-  const token = (data as AuthenticatedResponse | undefined)?.access_token;
+  // レスポンスは封筒 `{ result, status_code, data: { access_token } }`。
+  // openapi.json にスキーマが無いため型は付かない。封筒を剥がして手動型で受ける。
+  const token = unwrap<AuthenticatedResponse>(data)?.access_token;
   if (!isValidToken(token)) {
     throw new Error("サーバからアクセストークンを取得できませんでした");
   }

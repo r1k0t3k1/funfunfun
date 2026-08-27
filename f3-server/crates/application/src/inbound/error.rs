@@ -1,4 +1,4 @@
-use crate::{domain::error::DomainError, port::outbound::error::RepositoryError};
+use crate::{domain::error::DomainError, outbound::error::{C2Error, RepositoryError}};
 
 #[derive(Debug, thiserror::Error)]
 pub enum AuthUsecaseError {
@@ -31,6 +31,9 @@ pub enum ListenerUsecaseError {
 
     #[error("Failed to remove the listener")]
     FailedToRemove,
+
+    #[error(transparent)]
+    Unexpected(#[from] C2Error),
 }
 
 #[derive(Debug, thiserror::Error)]

@@ -1,3 +1,4 @@
+use application::domain::model::listener_model::ListenerModel;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -42,9 +43,20 @@ impl std::fmt::Display for ListenerType {
 }
 
 #[derive(Serialize, ToSchema)]
-pub struct ListListenerResponse {
+pub struct ListenerResponse {
     pub id: String,
     pub name: String,
     pub addr: String,
     pub protocol: String,
+}
+
+impl From<ListenerModel> for ListenerResponse {
+    fn from(value: ListenerModel) -> Self {
+        Self { 
+            id: value.id.to_string(),
+            name: value.name,
+            addr: value.addr.to_string(),
+            protocol: value.protocol.to_string(),
+        }
+    }
 }

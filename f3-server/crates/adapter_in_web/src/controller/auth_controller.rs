@@ -1,7 +1,9 @@
-use crate::dto::auth_dto::AuthenticatedResponse;
+use crate::dto::auth_dto::{AuthenticateRequest, AuthenticatedResponse};
+use crate::response::ResponseBody;
 use crate::state::AppState;
-use crate::{dto::operator_dto::OperatorCredential, error::ApiError};
-use actix_web::{HttpRequest, HttpResponse, post, web};
+use crate::error::ApiError;
+use actix_web::http::StatusCode;
+use actix_web::{HttpRequest, Responder, post, web};
 
 #[utoipa::path(
     context_path = "/auth",
@@ -13,18 +15,16 @@ use actix_web::{HttpRequest, HttpResponse, post, web};
 #[post("/login")]
 pub async fn login(
     state: web::Data<AppState>,
-    cred: web::Json<OperatorCredential>,
-) -> Result<HttpResponse, ApiError> {
+    cred: web::Json<AuthenticateRequest>,
+) -> Result<impl Responder, ApiError> {
     let session = state
         .auth_usecase
-        .authenticate_operator(cred.username.clone(), cred.password.clone())
+        .authenticate_operator(cred.operator_id.clone(), cred.password.clone())
         .await?;
 
-    let res = HttpResponse::Ok().json(AuthenticatedResponse {
+    Ok(ResponseBody::ok(StatusCode::OK, AuthenticatedResponse {
         access_token: session.session_id,
-    });
-
-    Ok(res)
+    }))
 }
 
 #[utoipa::path(
@@ -37,17 +37,16 @@ pub async fn login(
 pub async fn logout(
     state: web::Data<AppState>,
     req: HttpRequest,
-) -> Result<HttpResponse, ApiError> {
-    let session_id = req.cookie("session_id");
+) -> Result<impl Responder, ApiError> {
+    let Some(session_id) = req.cookie("session_id") else {
+        return Ok(ResponseBody::ok(StatusCode::OK, ())); // セッションなくてもとりあえずOK返す
+    };
 
-    if session_id.is_none() {
-        return Ok(HttpResponse::Ok().finish());
-    }
-
-    state
+    // ログアウト失敗してもとりあえずOK返す
+    let _ = state
         .auth_usecase
-        .logout(session_id.unwrap().to_string())
-        .await
-        .map(|_| HttpResponse::Ok().finish())
-        .map_err(|e| e.into())
+        .logout(session_id.value().to_string())
+        .await;
+
+    Ok(ResponseBody::ok(StatusCode::OK, ()))
 }

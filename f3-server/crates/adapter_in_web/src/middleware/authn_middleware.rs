@@ -10,7 +10,7 @@ use actix_web::{
 };
 use futures_util::future::LocalBoxFuture;
 
-use crate::{dto::operator_dto::AuthOperator, error::ApiError, state::AppState};
+use crate::{error::ApiError, state::AppState};
 
 // There are two steps in middleware processing.
 // 1. Middleware initialization, middleware factory gets called with
@@ -89,7 +89,7 @@ where
                 .await
                 .map_err(|_| ApiError::Unauthorized)?;
 
-            if !is_valid_session {
+            if is_valid_session == false {
                 return Err(ApiError::Unauthorized.into());
             }
 
@@ -101,7 +101,11 @@ where
                 //.map_err(|e| ApiError::UsecaseError(e))?
                 .ok_or_else(|| ApiError::Unauthorized)?;
 
-            req.extensions_mut().insert(AuthOperator::from(operator));
+            if operator.is_enabled == false {
+                return Err(ApiError::Unauthorized.into());
+            }
+
+            req.extensions_mut().insert(operator);
             service.call(req).await
         })
     }

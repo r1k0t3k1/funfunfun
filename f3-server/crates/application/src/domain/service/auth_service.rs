@@ -1,13 +1,15 @@
 use std::sync::Arc;
 
 use crate::{
-    domain::model::{operator_model::Operator, session_model::Session},
-    port::{
-        inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError},
-        outbound::{
-            error::RepositoryError, operator_repository::OperatorRepository,
-            session_repository::SessionRepository,
-        },
+    domain::model::{
+        operator_model::Operator, password_model::{HashedPassword, RawPassword}, session_model::Session,
+    },
+    inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError},
+    outbound::{
+        error::RepositoryError,
+        operator_repository::OperatorRepository,
+        password_hasher::PasswordHasherTrait,
+        session_repository::SessionRepository,
     },
 };
 
@@ -15,16 +17,19 @@ use crate::{
 pub struct AuthService {
     operator_repository: Arc<dyn OperatorRepository>,
     session_repository: Arc<dyn SessionRepository>,
+    password_hasher: Arc<dyn PasswordHasherTrait>,
 }
 
 impl AuthService {
     pub fn new(
         operator_repository: Arc<dyn OperatorRepository>,
         session_repository: Arc<dyn SessionRepository>,
+        password_hasher: Arc<dyn PasswordHasherTrait>,
     ) -> Self {
         Self {
             operator_repository,
             session_repository,
+            password_hasher,
         }
     }
 }
@@ -38,7 +43,7 @@ impl AuthUsecase for AuthService {
     ) -> Result<Session, AuthUsecaseError> {
         let operator = self
             .operator_repository
-            .find_by_credential(operator_id.into(), password.into())
+            .find_by_id(operator_id)
             .await
             .map_err(|e| {
                 log::error!("{e}");
@@ -46,8 +51,27 @@ impl AuthUsecase for AuthService {
                     RepositoryError::NotFound => AuthUsecaseError::AuthenticationFailed,
                     _ => AuthUsecaseError::Unexpected(e.into()),
                 }
-            })?
-            .ok_or(AuthUsecaseError::AuthenticationFailed)?;
+            })?;
+
+        // レスポンスタイムによるユーザ列挙を防ぐ
+        let Some(operator) = operator else {
+            let _ = self.password_hasher.hash(&RawPassword::new("dummydummy".to_string()).unwrap());
+            return Err(AuthUsecaseError::AuthenticationFailed)
+        };
+
+        if operator.is_enabled == false {
+            let _ = self.password_hasher.hash(&RawPassword::new("dummydummy".to_string()).unwrap());
+            return Err(AuthUsecaseError::AuthenticationFailed);
+        }
+        
+        let raw_password = RawPassword::new(password)
+            .map_err(|_| AuthUsecaseError::AuthenticationFailed)?;
+
+        let password_match = self.password_hasher.verify(&raw_password, &HashedPassword::from_phc_string(operator.password_hash));
+
+        if password_match == false {
+            return Err(AuthUsecaseError::AuthenticationFailed);
+        }
 
         self.session_repository
             .insert(operator.operator_id)

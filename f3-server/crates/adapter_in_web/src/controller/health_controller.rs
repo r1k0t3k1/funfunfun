@@ -10,6 +10,6 @@ use crate::state::AppState;
     )
 )]
 #[get("/db")]
-pub async fn health_check_db(state: web::Data<AppState>) -> impl Responder {
+pub async fn health_check_db(_state: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok() // TODO
 }

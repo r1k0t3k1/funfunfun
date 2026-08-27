@@ -13,3 +13,4 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
+zeroize = { workspace = true }

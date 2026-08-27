@@ -3,7 +3,11 @@
   import Icon from "$lib/ui/Icon.svelte";
   import Dialog from "$lib/ui/Dialog.svelte";
   import RowMenu from "$lib/ui/RowMenu.svelte";
-  import { listOperators, getOperator } from "$lib/api/operator";
+  import {
+    listOperators,
+    getOperator,
+    toggleOperatorStatus,
+  } from "$lib/api/operator";
   import type { OperatorResponse, OperatorRole } from "$lib/api/client";
 
   type Row = OperatorResponse;
@@ -57,6 +61,17 @@
     }
   }
 
+  // /operator/toggle_status を叩いて有効化状態を切り替え、一覧を更新する。
+  async function toggleStatus(id: string) {
+    errorMessage = "";
+    try {
+      await toggleOperatorStatus(id);
+      await refresh();
+    } catch (e) {
+      errorMessage = e instanceof Error ? e.message : "状態変更に失敗しました";
+    }
+  }
+
   onMount(refresh);
 </script>
 
@@ -87,6 +102,7 @@
       <tr>
         <th>名前</th>
         <th>ロール</th>
+        <th>状態</th>
         <th>説明</th>
         <th class="col-action"></th>
       </tr>
@@ -96,9 +112,22 @@
         <tr>
           <td><span class="badge badge-gray">{row.name}</span></td>
           <td><span class="badge {roleBadge(row.role)}">{row.role}</span></td>
+          <td>
+            <span class="badge {row.is_enabled ? 'badge-blue' : 'badge-gray'}">
+              {row.is_enabled ? "有効" : "無効"}
+            </span>
+          </td>
           <td>{row.description || "—"}</td>
           <td class="col-action">
-            <RowMenu actions={[{ label: "詳細", onSelect: () => showDetail(row.id) }]} />
+            <RowMenu
+              actions={[
+                { label: "詳細", onSelect: () => showDetail(row.id) },
+                {
+                  label: row.is_enabled ? "無効化" : "有効化",
+                  onSelect: () => toggleStatus(row.id),
+                },
+              ]}
+            />
           </td>
         </tr>
       {/each}
@@ -123,6 +152,12 @@
       <dd>{detail.name}</dd>
       <dt>ロール</dt>
       <dd><span class="badge {roleBadge(detail.role)}">{detail.role}</span></dd>
+      <dt>状態</dt>
+      <dd>
+        <span class="badge {detail.is_enabled ? 'badge-blue' : 'badge-gray'}">
+          {detail.is_enabled ? "有効" : "無効"}
+        </span>
+      </dd>
       <dt>説明</dt>
       <dd>{detail.description || "—"}</dd>
     </dl>

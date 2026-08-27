@@ -45,7 +45,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/OperatorCredential"
+                "$ref": "#/components/schemas/AuthenticateRequest"
               }
             }
           },
@@ -113,7 +113,15 @@
           "500": {
             "description": "Listenerの作成に失敗"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": [
+              "Admin",
+              "Write"
+            ]
+          }
+        ]
       }
     },
     "/listener/list": {
@@ -128,7 +136,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListListenerResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListenerResponse"
+                  }
                 }
               }
             }
@@ -136,7 +147,12 @@
           "500": {
             "description": "ハンドリングできない異常"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       }
     },
     "/listener/remove": {
@@ -162,7 +178,15 @@
           "500": {
             "description": "Listenerの削除に失敗"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": [
+              "Admin",
+              "Write"
+            ]
+          }
+        ]
       }
     },
     "/listener/start": {
@@ -188,7 +212,15 @@
           "500": {
             "description": "Listenerの起動に失敗"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": [
+              "Admin",
+              "Write"
+            ]
+          }
+        ]
       }
     },
     "/listener/stop": {
@@ -214,34 +246,47 @@
           "500": {
             "description": "Listenerの停止に失敗"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": [
+              "Admin",
+              "Write"
+            ]
+          }
+        ]
       }
     },
     "/operator/get": {
-      "post": {
+      "get": {
         "tags": [
           "crate::controller::operator_controller"
         ],
         "operationId": "get_operator",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetOperatorRequest"
-              }
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
-          },
-          "required": true
-        },
+          }
+        ],
         "responses": {
           "200": {
             "description": "オペレータ詳細情報"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       }
     },
     "/operator/list": {
-      "post": {
+      "get": {
         "tags": [
           "crate::controller::operator_controller"
         ],
@@ -250,12 +295,62 @@
           "200": {
             "description": "オペレータ一覧"
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/operator/toggle_status": {
+      "post": {
+        "tags": [
+          "crate::controller::operator_controller"
+        ],
+        "operationId": "toggle_operator_status",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleOperatorStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "有効化状態変更完了"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": [
+              "Admin"
+            ]
+          }
+        ]
       }
     }
   },
   "components": {
     "schemas": {
+      "AuthenticateRequest": {
+        "type": "object",
+        "required": [
+          "operator_id",
+          "password"
+        ],
+        "properties": {
+          "operator_id": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
       "CreateListenerRequest": {
         "type": "object",
         "required": [
@@ -281,18 +376,7 @@
           }
         }
       },
-      "GetOperatorRequest": {
-        "type": "object",
-        "required": [
-          "operator_id"
-        ],
-        "properties": {
-          "operator_id": {
-            "type": "string"
-          }
-        }
-      },
-      "ListListenerResponse": {
+      "ListenerResponse": {
         "type": "object",
         "required": [
           "id",
@@ -322,21 +406,6 @@
           "HTTP",
           "HTTPS"
         ]
-      },
-      "OperatorCredential": {
-        "type": "object",
-        "required": [
-          "username",
-          "password"
-        ],
-        "properties": {
-          "password": {
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          }
-        }
       },
       "RemoveListenerRequest": {
         "type": "object",
@@ -371,6 +440,17 @@
           }
         }
       },
+      "ToggleOperatorStatusRequest": {
+        "type": "object",
+        "required": [
+          "operator_id"
+        ],
+        "properties": {
+          "operator_id": {
+            "type": "string"
+          }
+        }
+      },
       "UploadFile": {
         "type": "object",
         "required": [
@@ -385,6 +465,12 @@
             "type": "string"
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "bearer_auth": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }
