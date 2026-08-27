@@ -1,18 +1,16 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, dev::ServerHandle, http::StatusCode, web};
-use anyhow::anyhow;
 use application::{
     domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol},
     outbound::{
         agent::{Agent, AgentId},
-        listener::ListenerPort,
     },
 };
 use std::net::SocketAddr;
 use std::time::Duration;
-use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio::{sync::mpsc::{self, UnboundedSender}, task::JoinHandle};
 use uuid::Uuid;
 
-use crate::c2_inner_message::C2InnerMessage;
+use crate::{c2_message::{C2Message, ListenerMessage}, listener::listener::ListenerPort};
 
 pub struct HttpListener {
     pub id: Uuid,
@@ -20,7 +18,8 @@ pub struct HttpListener {
     pub addr: SocketAddr,
     pub protocol: ListenerProtocol,
     pub handle: Option<ServerHandle>,
-    pub sender: mpsc::UnboundedSender<C2InnerMessage>,
+    pub server_task: Option<JoinHandle<anyhow::Result<()>>>,
+    pub sender: mpsc::UnboundedSender<C2Message>,
 }
 
 impl Drop for HttpListener {
@@ -32,13 +31,14 @@ impl Drop for HttpListener {
 }
 
 impl HttpListener {
-    pub fn new(name: String, addr: SocketAddr, protocol: ListenerProtocol, sender: mpsc::UnboundedSender<C2InnerMessage>) -> Self {
+    pub fn new(name: String, addr: SocketAddr, protocol: ListenerProtocol, sender: mpsc::UnboundedSender<C2Message>) -> Self {
         Self {
             id: Uuid::new_v4(),
             name,
             addr,
             protocol,
             handle: None,
+            server_task: None,
             sender,
         }
     }
@@ -56,24 +56,22 @@ impl HttpListener {
             .disable_signals()
             .run();
         
-        let handle = server.handle();
-        let _server_task = tokio::spawn(server);
-        self.handle = Some(handle);
+        self.handle = Some(server.handle());
+        self.server_task = Some(tokio::spawn(async move { server.await.map_err(anyhow::Error::from) }));
         Ok(())
     }
 
     pub async fn stop(&mut self) -> anyhow::Result<()> { 
         let handle = self.handle.take()
-            .ok_or_else(|| anyhow!("Listener not started"))?;
+            .ok_or_else(|| anyhow::anyhow!("Listener not started"))?;
 
         let _ = tokio::spawn(tokio::time::timeout(Duration::from_secs(5), handle.stop(true))).await;
         Ok(())
     }
 }
 
-async fn dispatch(sender: web::Data<UnboundedSender<C2InnerMessage>>) -> impl Responder {
-    log::info!("test");
-    let _ = sender.send(C2InnerMessage::ListenerRequestReceived);
+async fn dispatch(sender: web::Data<UnboundedSender<C2Message>>) -> impl Responder {
+    let _ = sender.send(C2Message::Listener(ListenerMessage::ListenerRequestReceived));
     HttpResponse::new(StatusCode::TEMPORARY_REDIRECT)
 }
 

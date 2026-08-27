@@ -1,12 +1,12 @@
 use tokio::sync::mpsc;
 
-use crate::c2_inner_message::C2InnerMessage;
+use crate::c2_message::AgentMessage;
 
 pub struct AgentActor {
-    receiver: mpsc::UnboundedReceiver<C2InnerMessage>,
+    receiver: mpsc::UnboundedReceiver<AgentMessage>,
     task_queue: Vec<String>, // TODO
 }
 
 pub struct AgentHandle {
-    sender: mpsc::UnboundedSender<C2InnerMessage>,
+    sender: mpsc::UnboundedSender<AgentMessage>,
 }

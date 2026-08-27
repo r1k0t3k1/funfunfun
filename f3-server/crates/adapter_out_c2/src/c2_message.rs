@@ -4,8 +4,12 @@ use application::domain::model::listener_model::{ListenerModel, ListenerProtocol
 use tokio::sync::oneshot;
 use uuid::Uuid;
 
+pub enum C2Message {
+    Listener(ListenerMessage),
+    Agent(AgentMessage),
+}
 
-pub enum C2InnerMessage {
+pub enum ListenerMessage {
     ListListener {
         reply: oneshot::Sender<anyhow::Result<Vec<ListenerModel>>>,
     },
@@ -28,4 +32,8 @@ pub enum C2InnerMessage {
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
     ListenerRequestReceived,
+
+}
+
+pub enum AgentMessage {
 }
