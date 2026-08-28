@@ -35,6 +35,65 @@
         }
       }
     },
+    "/agent/get": {
+      "get": {
+        "tags": [
+          "crate::controller::agent_controller"
+        ],
+        "operationId": "get_agent",
+        "responses": {
+          "200": {
+            "description": "Agent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ハンドリングできない異常"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/agent/list": {
+      "get": {
+        "tags": [
+          "crate::controller::agent_controller"
+        ],
+        "operationId": "list_agents",
+        "responses": {
+          "200": {
+            "description": "Listenerが管理するAgentの一覧",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentResponse"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ハンドリングできない異常"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/auth/login": {
       "post": {
         "tags": [
@@ -336,6 +395,43 @@
   },
   "components": {
     "schemas": {
+      "AgentResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "listener_id",
+          "status",
+          "session_pubkey",
+          "shared_secret"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "listener_id": {
+            "type": "string"
+          },
+          "session_pubkey": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "shared_secret": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
       "AuthenticateRequest": {
         "type": "object",
         "required": [

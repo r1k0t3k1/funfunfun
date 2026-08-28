@@ -1,16 +1,11 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, dev::ServerHandle, guard, web};
-use application::{
-    domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol},
-    outbound::{
-        agent::{Agent, AgentId},
-    },
-};
+use application::domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol};
 use std::net::SocketAddr;
 use std::time::Duration;
 use tokio::{sync::{mpsc::{self, UnboundedSender}, oneshot}, task::JoinHandle};
 use uuid::Uuid;
 
-use crate::{c2_message::{C2Message, ListenerMessage}, listener::{listener::ListenerPort, packet::{CheckinCompleteResponse, CheckinResponse, Packet, Tlv::{self, CheckinCompleteRes, CheckinRes}}}};
+use crate::{c2_message::{AgentMessage, C2Message}, listener::{listener::ListenerPort, packet::{CheckinCompleteResponse, CheckinResponse, Packet, Tlv::{self, CheckinCompleteRes, CheckinRes}}}};
 
 pub struct HttpListener {
     pub id: Uuid,
@@ -103,13 +98,19 @@ async fn dispatch(body: web::Bytes, sender: web::Data<UnboundedSender<C2Message>
             let agent_id = uuid::Uuid::from_bytes(packet.agent_id);
             let (tx, rx) = oneshot::channel();
             
-            let msg = C2Message::Listener(ListenerMessage::QuerySecret { listener_id: model.id, agent_id, reply: tx });
+            let msg = C2Message::ToAgent { 
+                agent_id,
+                msg: AgentMessage::Query { reply: tx },
+            };
             let _ = sender.send(msg);
-            let secret = rx.await
+
+            let agent = rx.await
                 .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
                 .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
-            println!("shared secret: {:?}", secret);
-            let plain = packet.decrypt(secret).unwrap(); // TODO
+
+            log::info!("agent {} shared secret: {:?}", agent.id, agent.shared_secret);
+
+            let plain = packet.decrypt(agent.shared_secret).unwrap(); // TODO
             let tlv = plain.first().unwrap();
 
             match tlv {
@@ -124,31 +125,23 @@ async fn dispatch(body: web::Bytes, sender: web::Data<UnboundedSender<C2Message>
 }
 
 async fn handle_checkin(sender: web::Data<UnboundedSender<C2Message>>, tlvs: Vec<Tlv>, model: web::Data::<ListenerModel>) -> Packet {
-    log::info!("tlv length: {}", tlvs.len());
     match tlvs.first() {
         Some(tlv) => match tlv {
             Tlv::CheckinReq(checkin_request) => {
-                let agent_id = Uuid::new_v4();
-                let msg = C2Message::Listener(ListenerMessage::AgentCheckinReceived { 
-                    listener_id: model.id,
-                    agent_id,
-                    agent_pubkey: checkin_request.agent_pubkey,
-                });
-                let _ = sender.send(msg);
-                let (tx, rx) = oneshot::channel();
-                let _ = sender.send(C2Message::Listener(ListenerMessage::Query { listener_id: model.id,  agent_id, reply: tx }));
-                let secret 
-                let res = vec![CheckinRes(CheckinResponse::new())];
-                return Packet::new(res, agent_id);
+                let received_pubkey = checkin_request.agent_pubkey;
+
+                let (reply, rx) = oneshot::channel();
+                let _ = sender.send(C2Message::AddAgent { listener_id: model.id, received_pubkey, reply });
+                let agent = rx.await.unwrap().unwrap(); // TODO
+                                                                    //
+                let res = vec![CheckinRes(CheckinResponse::new(agent.session_pubkey))];
+                return Packet::new(res, agent.id);
             },
             Tlv::CheckinCompleteReq(checkin_complete_request) => {
-                let agent_id = checkin_complete_request.agent_id.parse().unwrap(); // TODO unwrap
-                let msg = C2Message::Listener(ListenerMessage::AgentCheckinCompleted { 
-                    listener_id: model.id,
-                    agent_id,
-                });
+                let agent_id = Uuid::from_bytes(checkin_complete_request.agent_id);
+                let msg = C2Message::ToAgent { agent_id, msg: AgentMessage::CheckinComplete };
                 let _ = sender.send(msg);
-                let res = vec![CheckinCompleteRes(CheckinCompleteResponse::new(model.id.to_string(), agent_id.to_string()))];
+                let res = vec![CheckinCompleteRes(CheckinCompleteResponse::new(model.id.to_bytes_le(), agent_id.to_string()))];
                 return Packet::new(res, agent_id);
             },
             _ => todo!(),
@@ -190,20 +183,4 @@ impl ListenerPort for HttpListener {
         self.stop().await
     }
 
-    fn list_agents(&self) -> Vec<Agent> {
-        todo!()
-    }
-
-    fn add_agents(&mut self, agent: Agent) -> anyhow::Result<()> {
-        todo!()
-    }
-
-    fn remove_agent(&mut self, agent_id: AgentId) -> anyhow::Result<()> {
-        todo!()
-    }
-
-    fn remove_all_agent(&mut self) {
-        todo!()
-    }
 }
-

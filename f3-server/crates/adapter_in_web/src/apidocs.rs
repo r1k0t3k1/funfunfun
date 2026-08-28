@@ -16,6 +16,8 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::controller::operator_controller::list_operators,
         crate::controller::operator_controller::get_operator,
         crate::controller::operator_controller::toggle_operator_status,
+        crate::controller::agent_controller::list_agents,
+        crate::controller::agent_controller::get_agent,
     ),
     modifiers(&SecurityAddon),
 )]

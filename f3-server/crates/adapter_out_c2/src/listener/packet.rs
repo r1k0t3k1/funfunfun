@@ -1,5 +1,4 @@
-use anyhow::anyhow;
-use application::outbound::agent::{AgentEvent, AgentId};
+use application::domain::model::agent_model::AgentId;
 use chacha20poly1305::{ChaCha20Poly1305, Key, Nonce, aead::{Aead, KeyInit, Payload}};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -72,35 +71,6 @@ impl Packet {
     }
 }
 
-impl TryInto<Vec<AgentEvent>> for Packet {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> Result<Vec<AgentEvent>, Self::Error> {
-        match self.body {
-            Body::Encrypted { nonce: _, cipher_text: _, tag: _ } => Err(anyhow!("Packet is Encrypted")),
-            Body::Plain(tlvs) => {
-                let mut results = vec![];
-                for tlv in tlvs {
-                    results.push(tlv.try_into()?)
-                }
-                Ok(results)
-            }
-        } 
-    }
-}
-
-impl TryInto<AgentEvent> for Tlv {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> Result<AgentEvent, Self::Error> {
-        match self {
-            Self::CheckinReq(v) => Ok(AgentEvent::Checkin { agent_public_key: v.agent_pubkey, response_sender: todo!() }),
-            Self::CheckinCompleteReq(v) => Ok(AgentEvent::CheckinComplete { agent_info: v.agent_info, response_sender: todo!() }),
-            _ => Err(anyhow!("Cannot convert Tlv to Agent Event: {self:?}")),
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Body {
     Plain(Vec<Tlv>),
@@ -150,18 +120,18 @@ impl CheckinResponse {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CheckinCompleteRequest { 
-    pub agent_id: String, 
+    pub agent_id: [u8;16], 
     pub agent_info: String, // 共通鍵で暗号化したホストの情報などを送る // TODO
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CheckinCompleteResponse { // ↑が復号できればCheckin完了、サーバ側でAgent登録
-    pub listener_id: String,
+    pub listener_id: [u8;16],
     pub agent_id: String,
 }
 
 impl CheckinCompleteResponse {
-    pub fn new(listener_id: String, agent_id: String) -> Self {
+    pub fn new(listener_id: [u8;16], agent_id: String) -> Self {
         Self { listener_id, agent_id } 
     }
 }
