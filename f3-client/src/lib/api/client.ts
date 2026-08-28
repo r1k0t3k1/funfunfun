@@ -130,6 +130,14 @@ export type AuthenticatedResponse = {
 export type ListenerListItem = components["schemas"]["ListenerResponse"];
 
 /**
+ * /agent/list・/agent/get のレスポンス要素。
+ * openapi.json に `AgentResponse` スキーマが定義されたため、生成型を利用する。
+ * Agent は Listener に紐づくオブジェクトで、`listener_id` で所属 Listener が分かる。
+ * （レスポンスは配列 `AgentResponse[]` / 単体 `AgentResponse` を封筒に包んで返る）
+ */
+export type AgentResponse = components["schemas"]["AgentResponse"];
+
+/**
  * オペレータの権限ロール。
  * サーバの Role（Admin / Write / Read）に対応する文字列。
  */
