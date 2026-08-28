@@ -50,5 +50,14 @@ pub enum OperatorUsecaseError {
     #[error(transparent)]
     RepositoryError(#[from] RepositoryError),
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum AgentUsecaseError {
+    #[error("Agent not found")]
+    AgentNotFound,
+
+    #[error(transparent)]
+    Unexpected(#[from] C2Error),
+}
 // TODO
 // ユースケースごとのエラーを定義

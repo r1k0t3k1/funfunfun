@@ -1,16 +1,18 @@
-use anyhow::anyhow;
+use application::domain::model::agent_model::{AgentId, AgentModel};
 use application::domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol};
+use uuid::Uuid;
 use std::{collections::HashMap, net::SocketAddr};
 use tokio::sync::{mpsc, oneshot};
-use uuid::Uuid;
 
+use crate::actor::agent_actor::AgentHandle;
 use crate::actor::listener_actor::ListenerHandle;
 use crate::c2_message::{AgentMessage, C2Message, ListenerMessage};
 
 pub struct C2ManagerActor {
-    sender: mpsc::UnboundedSender<C2Message>, // C2ManagerにListenerからメッセージを送信する用
+    sender: mpsc::UnboundedSender<C2Message>, // C2ManagerにListenerやAgentからメッセージを送信する用
     receiver: mpsc::UnboundedReceiver<C2Message>,
     listener_handles: HashMap<ListenerId, ListenerHandle>,
+    agent_handles: HashMap<AgentId, AgentHandle>,
 }
 
 impl C2ManagerActor {
@@ -18,7 +20,7 @@ impl C2ManagerActor {
         sender: mpsc::UnboundedSender<C2Message>,
         receiver: mpsc::UnboundedReceiver<C2Message>,
     ) -> Self {
-        Self { sender, receiver, listener_handles: HashMap::new() }
+        Self { sender, receiver, listener_handles: HashMap::new(), agent_handles: HashMap::new() }
     }
 
     async fn run(&mut self) {
@@ -29,57 +31,81 @@ impl C2ManagerActor {
 
     fn handle_message(&mut self, msg: C2Message) {
         match msg {
-            C2Message::Listener(msg) => self.handle_listener_message(msg),
-            C2Message::Agent(msg) => self.handle_agent_message(msg),
-        }
-    }
+            C2Message::QueryListener { listener_id, reply } => {
+                let model = self.listener_handles.get(&listener_id)
+                    .map(|l| l.model.clone())
+                    .ok_or(anyhow::anyhow!("Listener {listener_id} not found"));
+                let _ = reply.send(model);
+            },
 
-    fn handle_listener_message(&mut self, msg: ListenerMessage) {
-        match msg {
-            ListenerMessage::ListListener { reply } => {
-                let listeners = self.listener_handles
+            C2Message::ListListener { reply } => {
+                let models: Vec<ListenerModel> = self.listener_handles
                     .values()
                     .into_iter()
                     .map(|l| l.model.clone())
                     .collect();
+                let _ = reply.send(Ok(models));
+            },
 
-                let _ = reply.send(Ok(listeners));
+            C2Message::AddListener { name, addr, protocol, reply } => {
+                let listener_id = Uuid::new_v4();
+                let listener_handle = ListenerHandle::new(listener_id, name, addr, protocol, self.sender.clone());
+                let model = listener_handle.model.clone();
+                self.listener_handles.insert(listener_id, listener_handle);
+                let _ = reply.send(Ok(model));
             },
-            ListenerMessage::AddListener { name, addr, protocol, reply } => {
-                let id = Uuid::new_v4();
-                let listener_handle = ListenerHandle::new(id, name.clone(), addr, protocol.clone(), self.sender.clone());
-                self.listener_handles.insert(id, listener_handle);
-                let _ = reply.send(Ok(ListenerModel::new(id, name, addr, protocol)));
-            },
-            ListenerMessage::StartListener { listener_id, reply } => {
-                let Some(l) = self.listener_handles.get(&listener_id) else {
-                    let _ = reply.send(Err(anyhow!("Listener not found: {listener_id}")));
-                    return;
-                };
-                let msg = ListenerMessage::StartListener { listener_id, reply };
-                let _ = l.sender.send(msg);
-            },
-            ListenerMessage::StopListener { listener_id, reply } => {
-                let Some(l) = self.listener_handles.get(&listener_id) else {
-                    let _ = reply.send(Err(anyhow!("Listener not found: {listener_id}")));
-                    return;
-                };
-                let msg = ListenerMessage::StopListener { listener_id, reply };
-                let _ = l.sender.send(msg);
-            },
-            ListenerMessage::RemoveListener { listener_id, reply } => {
-                let _ = self.listener_handles.remove(&listener_id);
+
+            C2Message::RemoveListener { listener_id, reply } => {
+                self.listener_handles.remove(&listener_id);
                 let _ = reply.send(Ok(()));
             },
-            ListenerMessage::ListenerRequestReceived => { log::info!("listner requesst received"); todo!() },
-        }
-    }
 
-    fn handle_agent_message(&mut self, msg: AgentMessage) {
-        todo!()
+            C2Message::ListAgent { listener_id, reply } => {
+                reply.send(Ok(self.agent_handles.values().map(|a| a.model.clone()).collect()));
+            },
+
+            C2Message::AddAgent { listener_id, reply, received_pubkey } => {
+                let agent_id = Uuid::new_v4();
+                let agent_handle = AgentHandle::new(listener_id, agent_id, received_pubkey, self.sender.clone());
+                self.agent_handles.insert(agent_id, agent_handle);
+                log::info!("received pubkey: {:?}", received_pubkey);
+
+                let agent_handle = self.agent_handles.get(&agent_id).unwrap();
+                let msg = AgentMessage::Query { reply };
+                let _ = agent_handle.sender.send(msg);
+            },
+
+            C2Message::QueryAgent { agent_id, reply } => {
+                let Some(a) = self.agent_handles.get(&agent_id) else {
+                    log::error!("agent {agent_id} not found, but QueryAgent message received.");
+                    return;
+                };
+                let msg = AgentMessage::Query { reply };
+                let _ = a.sender.send(msg);
+            },
+
+            C2Message::ToListener { listener_id, msg } => {
+                // listenerに転送するだけ
+                let Some(l) = self.listener_handles.get(&listener_id) else {
+                    log::error!("listener {listener_id} not found, but message received.");
+                    return ;
+                };
+                let _ = l.sender.send(msg);
+            },
+
+            C2Message::ToAgent { agent_id, msg } => {
+                // agentに転送するだけ
+                let Some(a) = self.agent_handles.get(&agent_id) else {
+                    log::error!("agent {agent_id} not found, but ToAgent message received.");
+                    return;
+                };
+                let _ = a.sender.send(msg);
+            },
+        }
     }
 }
 
+#[derive(Clone)]
 pub struct C2ManagerHandle {
     sender: mpsc::UnboundedSender<C2Message>,
 }
@@ -99,7 +125,7 @@ impl C2ManagerHandle {
         protocol: ListenerProtocol, 
     ) -> anyhow::Result<ListenerModel> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::Listener(ListenerMessage::AddListener { name, addr, protocol, reply });
+        let msg = C2Message::AddListener { name, addr, protocol, reply };
         let _ = self.sender.send(msg);
         
         rx.await?
@@ -107,7 +133,7 @@ impl C2ManagerHandle {
 
     pub async fn list_listener(&self) -> anyhow::Result<Vec<ListenerModel>> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::Listener(ListenerMessage::ListListener { reply });
+        let msg = C2Message::ListListener { reply };
         let _ = self.sender.send(msg);
 
         rx.await?
@@ -115,7 +141,10 @@ impl C2ManagerHandle {
 
     pub async fn start_listener(&self, listener_id: ListenerId) -> anyhow::Result<()> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::Listener(ListenerMessage::StartListener { listener_id, reply });
+        let msg = C2Message::ToListener { 
+            listener_id, 
+            msg: ListenerMessage::Start { reply } 
+        };
         let _ = self.sender.send(msg);
         
         rx.await?
@@ -123,7 +152,10 @@ impl C2ManagerHandle {
 
     pub async fn stop_listener(&self, listener_id: ListenerId) -> anyhow::Result<()> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::Listener(ListenerMessage::StopListener { listener_id, reply });
+        let msg = C2Message::ToListener { 
+            listener_id, 
+            msg: ListenerMessage::Stop { reply } 
+        };
         let _ = self.sender.send(msg);
         
         rx.await?
@@ -131,7 +163,23 @@ impl C2ManagerHandle {
 
     pub async fn remove_listener(&self, listener_id: ListenerId) -> anyhow::Result<()> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::Listener(ListenerMessage::RemoveListener { listener_id, reply });
+        let msg = C2Message::RemoveListener { listener_id, reply };
+        let _ = self.sender.send(msg);
+
+        rx.await?
+    }
+
+    pub async fn list_agent(&self, listener_id: ListenerId) -> anyhow::Result<Vec<AgentModel>> {
+        let (reply, rx) = oneshot::channel();
+        let msg = C2Message::ListAgent { listener_id, reply };
+        let _ = self.sender.send(msg);
+
+        rx.await?
+    }
+
+    pub async fn get_agent(&self, agent_id: AgentId) -> anyhow::Result<AgentModel> {
+        let (reply, rx) = oneshot::channel();
+        let msg = C2Message::QueryAgent { agent_id, reply };
         let _ = self.sender.send(msg);
 
         rx.await?

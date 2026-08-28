@@ -1,15 +1,14 @@
 use std::net::SocketAddr;
 
-use application::domain::model::listener_model::{ListenerModel, ListenerProtocol};
+use application::{domain::model::{agent_model::AgentModel, listener_model::{ListenerId, ListenerModel, ListenerProtocol}}};
+use application::domain::model::agent_model::AgentId;
 use tokio::sync::oneshot;
-use uuid::Uuid;
 
 pub enum C2Message {
-    Listener(ListenerMessage),
-    Agent(AgentMessage),
-}
-
-pub enum ListenerMessage {
+    QueryListener {
+        listener_id: ListenerId,
+        reply: oneshot::Sender<anyhow::Result<ListenerModel>>,
+    },
     ListListener {
         reply: oneshot::Sender<anyhow::Result<Vec<ListenerModel>>>,
     },
@@ -19,21 +18,59 @@ pub enum ListenerMessage {
         protocol: ListenerProtocol,
         reply: oneshot::Sender<anyhow::Result<ListenerModel>>,
     },
-    StartListener {
-        listener_id: Uuid,
-        reply: oneshot::Sender<anyhow::Result<()>>,
-    },
-    StopListener {
-        listener_id: Uuid,
-        reply: oneshot::Sender<anyhow::Result<()>>,
-    },
     RemoveListener {
-        listener_id: Uuid,
+        listener_id: ListenerId,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
-    ListenerRequestReceived,
+    ListAgent {
+        listener_id: ListenerId,
+        reply: oneshot::Sender<anyhow::Result<Vec<AgentModel>>>,
+    },
+    QueryAgent {
+        agent_id: AgentId,
+        reply: oneshot::Sender<anyhow::Result<AgentModel>>,
+    },
+    AddAgent {
+        listener_id: ListenerId,
+        received_pubkey: [u8; 32],
+        reply: oneshot::Sender<anyhow::Result<AgentModel>>,
+    },
+    ToListener { listener_id: ListenerId, msg: ListenerMessage },
+    ToAgent { agent_id: AgentId, msg: AgentMessage },
+}
 
+pub enum ListenerMessage {
+    Start {
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    Stop {
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    Query {
+        reply: oneshot::Sender<anyhow::Result<ListenerModel>>,
+    },
+    //AgentCheckinReceived {
+    //    listener_id: ListenerId,
+    //    agent_id: AgentId,
+    //    agent_pubkey: [u8; 32],
+    //},
+    //AgentCheckinCompleted {
+    //    listener_id: ListenerId,
+    //    agent_id: AgentId
+    //},
+    //CheckinAgent {
+    //    agent_id: AgentId,
+    //    agent_pubkey: [u8; 32],
+    //},
+    //CompleteCheckinAgent {
+    //    listener_id: ListenerId,
+    //    agent_id: AgentId
+    //},
 }
 
 pub enum AgentMessage {
+    Query {
+        reply: oneshot::Sender<anyhow::Result<AgentModel>>,
+    },
+    CheckinComplete,
 }

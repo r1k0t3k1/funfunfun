@@ -1,25 +1,13 @@
-use uuid::Uuid;
+use crate::{
+    domain::model::{agent_model::AgentModel, listener_model::ListenerId},
+    outbound::error::C2Error,
+};
 
-use crate::domain::model::listener_model::ListenerId;
+use crate::domain::model::agent_model::AgentId;
 
-pub type AgentId = Uuid;
-
-pub struct Agent {
-    pub agent_id: AgentId,
-    pub listener_id: ListenerId,
+#[async_trait::async_trait]
+pub trait AgentControllerPort: Send + Sync {
+    async fn list(&self, listener_id: ListenerId) -> Result<Vec<AgentModel>, C2Error>;
+    async fn find_by_id(&self, agent_id: AgentId) -> Result<AgentModel, C2Error>;
 }
 
-type AgentPublicKey = [u8; 32];
-
-pub enum AgentEvent {
-    Checkin {
-        agent_public_key: AgentPublicKey,
-        response_sender: tokio::sync::oneshot::Sender<()>,
-        //response_sender: tokio::sync::oneshot::Sender<CheckinResponse>,
-    },
-    CheckinComplete {
-        agent_info: String,
-        response_sender: tokio::sync::oneshot::Sender<()>,
-        //response_sender: tokio::sync::oneshot::Sender<CheckinCompleteResponse>,
-    }, // TODO
-}

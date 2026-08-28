@@ -17,6 +17,8 @@ async-trait = { workspace = true }
 anyhow = { workspace = true }
 uuid = { workspace = true }
 log = { workspace = true }
-rust-crypto = { workspace = true }
+x25519-dalek = { version = "3", features = ["getrandom", "static_secrets"] }
+chacha20poly1305 = { version = "0.10" }
 serde = { workspace = true }
+serde_cbor = { workspace = true }
 rand = { workspace = true }
