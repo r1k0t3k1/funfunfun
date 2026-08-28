@@ -130,6 +130,15 @@ export type AuthenticatedResponse = {
 export type ListenerListItem = components["schemas"]["ListenerResponse"];
 
 /**
+ * /agent/list・/agent/get のレスポンス要素。
+ * openapi.json に `AgentResponse` スキーマが追加されたため、生成型を利用する。
+ * （レスポンスは `AgentResponse[]` / `AgentResponse` を封筒に包んで返る）
+ *   - status: サーバ側 enum を `{:?}` で文字列化したもの（例: "Alive" / "Dead"）
+ *   - session_pubkey / shared_secret: 32 バイト鍵を数値配列で表現したもの
+ */
+export type AgentListItem = components["schemas"]["AgentResponse"];
+
+/**
  * オペレータの権限ロール。
  * サーバの Role（Admin / Write / Read）に対応する文字列。
  */
