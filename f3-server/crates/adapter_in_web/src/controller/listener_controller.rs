@@ -24,7 +24,10 @@ pub async fn list_listeners(state: web::Data<AppState>) -> Result<impl Responder
         .listener_usecase
         .list_listeners()
         .await
-        .map_err(|e| ApiError::NotFound)?
+        .map_err(|e| {
+            log::warn!("{e}");
+            ApiError::NotFound
+        })?
         .iter()
         .map(|l| l.clone().into())
         .collect::<Vec<ListenerResponse>>();
@@ -60,7 +63,10 @@ pub async fn create_listener(
         )
         .await
         .map(|result| ResponseBody::ok(StatusCode::OK, ListenerResponse::from(result)))
-        .map_err(|_| ApiError::InternelServerError) // TODO
+        .map_err(|e| {
+            log::warn!("{e}");
+            ApiError::InternelServerError
+        })
 }
 
 #[utoipa::path(
@@ -109,7 +115,10 @@ pub async fn stop_listener(
     let listener_id = req
         .listener_id
         .parse::<uuid::Uuid>()
-        .map_err(|_| ApiError::BadRequest {detail: "Failed to parse listener id".to_string()})?;
+        .map_err(|e| {
+            log::warn!("{e}");
+            ApiError::BadRequest {detail: "Failed to parse listener id".to_string()}
+        })?;
 
     state
         .listener_usecase

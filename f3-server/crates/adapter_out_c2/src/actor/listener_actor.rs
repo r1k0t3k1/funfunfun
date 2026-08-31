@@ -38,30 +38,6 @@ impl ListenerActor {
             ListenerMessage::Query { reply } => {
                 let _ = reply.send(Ok(self.listener.listener_model()));
             },
-            //ListenerMessage::Start { listener_id: _, reply } => {
-            //    let _ = reply.send(self.listener.start());
-            //},
-            //ListenerMessage::Stop { listener_id: _, reply } => {
-            //    let _ = reply.send(self.listener.stop().await);
-            //},
-            //ListenerMessage::CheckinAgent { agent_id, agent_pubkey } => {
-            //    let agent_handle = AgentHandle::new(agent_pubkey);
-            //    self.agent_handles.insert(agent_id, agent_handle);
-            //    log::info!("Agent checkin process started: {agent_id}");
-            //},
-            //ListenerMessage::CompleteCheckinAgent { listener_id, agent_id } => {
-            //    let Some(a) = self.agent_handles.get(&agent_id) else {
-            //        return;
-            //    };
-            //    let _ = a.sender.send(AgentMessage::CheckinComplete);
-            //},
-            //ListenerMessage::Query { listener_id: _, agent_id , reply } => {
-            //    let Some(a) = self.agent_handles.get(&agent_id) else {
-            //        return;
-            //    };
-            //    let _ = a.sender.send(AgentMessage::QuerySecret { reply });
-            //},
-            //_ => {},
         }
     }
 }

@@ -60,8 +60,8 @@ impl C2ManagerActor {
                 let _ = reply.send(Ok(()));
             },
 
-            C2Message::ListAgent { listener_id, reply } => {
-                reply.send(Ok(self.agent_handles.values().map(|a| a.model.clone()).collect()));
+            C2Message::ListAgent { listener_id: _, reply } => {
+                let _ = reply.send(Ok(self.agent_handles.values().map(|a| a.model.clone()).collect()));
             },
 
             C2Message::AddAgent { listener_id, reply, received_pubkey } => {

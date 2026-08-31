@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-use crate::{domain::model::{agent_model::{AgentId, AgentModel}, listener_model::ListenerId}, inbound::{agent_usecase::AgentUsecase, error::AgentUsecaseError}, outbound::agent::AgentControllerPort};
+use crate::{domain::model::{agent_model::{AgentId, AgentModel}, listener_model::ListenerId}, inbound::{agent_usecase::AgentUsecase, error::AgentUsecaseError}, outbound::{agent::AgentControllerPort, error::C2Error}};
 
 
 #[derive(Clone)]
@@ -25,7 +25,10 @@ impl AgentUsecase for AgentService {
             .await
             .find_by_id(agent_id)
             .await
-            .map_err(|e| AgentUsecaseError::Unexpected(e))
+            .map_err(|e| match e {
+                C2Error::NotFound { id: _ } => AgentUsecaseError::AgentNotFound,
+                _ => AgentUsecaseError::Unexpected(e),
+            })
     }
 }
 

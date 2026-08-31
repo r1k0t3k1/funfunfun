@@ -23,7 +23,10 @@ pub async fn list_operators(state: web::Data<AppState>) -> Result<impl Responder
         .operator_usecase
         .list_operators()
         .await
-        .map_err(|_| ApiError::InternelServerError)?
+        .map_err(|e| {
+            log::warn!("{e}");
+            ApiError::InternelServerError
+        })?
         .iter()
         .map(|o| Into::<OperatorResponse>::into(o.clone()))
         .collect();
@@ -50,7 +53,10 @@ pub async fn get_operator(
         .operator_usecase
         .get_operator(operator.operator_id.clone())
         .await
-        .map_err(|_| ApiError::InternelServerError)?
+        .map_err(|e| {
+            log::warn!("{e}");
+            ApiError::InternelServerError
+        })?
         .ok_or_else(|| ApiError::NotFound)
         .map(|o| Into::<OperatorResponse>::into(o))?;
     
@@ -105,6 +111,9 @@ pub async fn toggle_operator_status(
         .toggle_status(operator_id)
         .await
         .map(|result| ResponseBody::ok(StatusCode::OK, Into::<OperatorResponse>::into(result)))
-        .map_err(|_| ApiError::InternelServerError)
+        .map_err(|e| {
+            log::warn!("{e}");
+            ApiError::InternelServerError
+        })
 }
 

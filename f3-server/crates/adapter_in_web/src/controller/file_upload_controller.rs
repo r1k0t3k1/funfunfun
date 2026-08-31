@@ -19,16 +19,25 @@ pub async fn upload_file(upload_file: web::Json<UploadFile>) -> Result<impl Resp
 
     let file = BASE64_STANDARD
         .decode(upload_file.data.clone())
-        .map_err(|_| ApiError::BadRequest {detail: "Invalid file data".to_string()})?;
+        .map_err(|e| {
+            log::warn!("{e}");
+            ApiError::BadRequest {detail: "Invalid file data".to_string()}
+        })?;
 
     let upload_path = Path::new("resource/download").join(filename);
 
     let mut new_file = File::create(upload_path)
-        .map_err(|_| ApiError::InternelServerError)?;
+        .map_err(|e| {
+            log::warn!("{e}");
+            ApiError::InternelServerError
+        })?;
 
     new_file
         .write_all(&file)
-        .map_err(|_| ApiError::InternelServerError)?;
+        .map_err(|e| {
+            log::warn!("{e}");
+            ApiError::InternelServerError
+        })?;
 
     Ok(ResponseBody::ok(StatusCode::OK, ()))
 }
