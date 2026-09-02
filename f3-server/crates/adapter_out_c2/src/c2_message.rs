@@ -1,7 +1,6 @@
 use std::net::SocketAddr;
 
-use application::{domain::model::{agent_model::AgentModel, listener_model::{ListenerId, ListenerModel, ListenerProtocol}}};
-use application::domain::model::agent_model::AgentId;
+use application::domain::model::{agent_model::AgentModel, id::{AgentId, ListenerId}, listener_model::{ListenerModel, ListenerProtocol}};
 use tokio::sync::oneshot;
 
 pub enum C2Message {

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-use crate::{domain::model::{agent_model::{AgentId, AgentModel}, listener_model::ListenerId}, inbound::{agent_usecase::AgentUsecase, error::AgentUsecaseError}, outbound::{agent::AgentControllerPort, error::C2Error}};
+use crate::{domain::model::{agent_model::AgentModel, id::{AgentId, ListenerId}}, inbound::{agent_usecase::AgentUsecase, error::AgentUsecaseError}, outbound::{agent::AgentControllerPort, error::C2Error}};
 
 
 #[derive(Clone)]

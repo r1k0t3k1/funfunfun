@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use application::domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol};
+use application::domain::model::{id::ListenerId, listener_model::{ListenerModel, ListenerProtocol}};
 
 #[async_trait::async_trait]
 pub trait ListenerPort: Send + Sync {

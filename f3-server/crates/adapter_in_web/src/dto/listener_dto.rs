@@ -1,4 +1,4 @@
-use application::domain::model::listener_model::ListenerModel;
+use application::domain::model::{id::Id, listener_model::ListenerModel};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 

@@ -309,6 +309,7 @@ dependencies = [
  "anyhow",
  "application",
  "async-trait",
+ "bytes",
  "chacha20poly1305",
  "http-body-util",
  "hyper",
@@ -322,6 +323,8 @@ dependencies = [
  "util",
  "uuid",
  "x25519-dalek",
+ "zerocopy",
+ "zerocopy-derive",
 ]
 
 [[package]]

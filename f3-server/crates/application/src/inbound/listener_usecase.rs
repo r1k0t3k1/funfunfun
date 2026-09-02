@@ -1,4 +1,4 @@
-use crate::domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol};
+use crate::domain::model::{id::ListenerId, listener_model::{ListenerModel, ListenerProtocol}};
 
 use super::error::ListenerUsecaseError;
 

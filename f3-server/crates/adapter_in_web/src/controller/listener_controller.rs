@@ -6,7 +6,7 @@ use crate::{
     }, error::ApiError, response::ResponseBody, state::AppState
 };
 
-use application::domain::model::listener_model::ListenerProtocol;
+use application::domain::model::{id::{Id, ListenerId}, listener_model::ListenerProtocol};
 
 #[utoipa::path(
     context_path = "/listener",
@@ -87,7 +87,8 @@ pub async fn start_listener(
     let listener_id = req
         .listener_id
         .parse::<uuid::Uuid>()
-        .map_err(|_| ApiError::BadRequest {detail: "Failed to parse listener id".to_string()})?;
+        .map_err(|_| ApiError::BadRequest {detail: "Failed to parse listener id".to_string()})
+        .map(|id| ListenerId::new(id))?;
 
     state
         .listener_usecase
@@ -118,7 +119,8 @@ pub async fn stop_listener(
         .map_err(|e| {
             log::warn!("{e}");
             ApiError::BadRequest {detail: "Failed to parse listener id".to_string()}
-        })?;
+        })
+        .map(|id| ListenerId::new(id))?;
 
     state
         .listener_usecase
@@ -146,7 +148,8 @@ pub async fn remove_listener(
     let listener_id = req
         .listener_id
         .parse::<uuid::Uuid>()
-        .map_err(|_| ApiError::BadRequest {detail: "Failed to parse listener id".to_string()})?;
+        .map_err(|_| ApiError::BadRequest {detail: "Failed to parse listener id".to_string()})
+        .map(|id| ListenerId::new(id))?;
 
     state
         .listener_usecase

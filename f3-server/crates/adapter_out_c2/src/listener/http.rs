@@ -1,5 +1,5 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, dev::ServerHandle, guard, web};
-use application::domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol};
+use application::domain::model::{id::{AgentId, Id, ListenerId}, listener_model::{ListenerModel, ListenerProtocol}};
 use std::net::SocketAddr;
 use std::time::Duration;
 use tokio::{sync::{mpsc::{self, UnboundedSender}, oneshot}, task::JoinHandle};
@@ -8,7 +8,7 @@ use uuid::Uuid;
 use crate::{c2_message::{AgentMessage, C2Message}, listener::{listener::ListenerPort, packet::{CheckinCompleteResponse, CheckinResponse, Packet, Tlv::{self, CheckinCompleteRes, CheckinRes}}}};
 
 pub struct HttpListener {
-    pub id: Uuid,
+    pub id: ListenerId,
     pub name: String,
     pub addr: SocketAddr,
     pub protocol: ListenerProtocol,
@@ -26,7 +26,7 @@ impl Drop for HttpListener {
 }
 
 impl HttpListener {
-    pub fn new(id: Uuid, name: String, addr: SocketAddr, protocol: ListenerProtocol, sender: mpsc::UnboundedSender<C2Message>) -> Self {
+    pub fn new(id: ListenerId, name: String, addr: SocketAddr, protocol: ListenerProtocol, sender: mpsc::UnboundedSender<C2Message>) -> Self {
         Self {
             id,
             name,
@@ -95,7 +95,7 @@ async fn dispatch(body: web::Bytes, sender: web::Data<UnboundedSender<C2Message>
             return Ok(HttpResponse::Ok().body(bytes))
         },
         crate::listener::packet::Body::Encrypted { nonce: _, cipher_text: _, tag: _ } => {
-            let agent_id = uuid::Uuid::from_bytes(packet.agent_id);
+            let agent_id = AgentId::new(uuid::Uuid::from_bytes(packet.agent_id));
             let (tx, rx) = oneshot::channel();
             
             let msg = C2Message::ToAgent { 
@@ -138,7 +138,7 @@ async fn handle_checkin(sender: web::Data<UnboundedSender<C2Message>>, tlvs: Vec
                 return Packet::new(res, agent.id);
             },
             Tlv::CheckinCompleteReq(checkin_complete_request) => {
-                let agent_id = Uuid::from_bytes(checkin_complete_request.agent_id);
+                let agent_id = AgentId::new(Uuid::from_bytes(checkin_complete_request.agent_id));
                 let msg = C2Message::ToAgent { agent_id, msg: AgentMessage::CheckinComplete };
                 let _ = sender.send(msg);
                 let res = vec![CheckinCompleteRes(CheckinCompleteResponse::new(model.id.to_bytes_le(), agent_id.to_string()))];
@@ -155,7 +155,7 @@ async fn handle_checkin(sender: web::Data<UnboundedSender<C2Message>>, tlvs: Vec
 #[async_trait::async_trait]
 impl ListenerPort for HttpListener {
     fn id(&self) -> ListenerId {
-        self.id
+        self.id.clone()
     }
     fn name(&self) -> String {
         self.name.to_string()

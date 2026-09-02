@@ -1,8 +1,4 @@
-use uuid::Uuid;
-
-use crate::domain::model::listener_model::ListenerId;
-
-pub type AgentId = Uuid;
+use crate::domain::model::id::{AgentId, ListenerId};
 
 #[derive(Debug, Clone)]
 pub enum AgentStatus {

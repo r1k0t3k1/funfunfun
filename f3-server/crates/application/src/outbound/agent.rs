@@ -1,9 +1,8 @@
 use crate::{
-    domain::model::{agent_model::AgentModel, listener_model::ListenerId},
+    domain::model::{agent_model::AgentModel, id::{AgentId, ListenerId}},
     outbound::error::C2Error,
 };
 
-use crate::domain::model::agent_model::AgentId;
 
 #[async_trait::async_trait]
 pub trait AgentControllerPort: Send + Sync {

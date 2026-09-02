@@ -1,5 +1,5 @@
 use crate::{
-    domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol},
+    domain::model::{id::ListenerId, listener_model::{ListenerModel, ListenerProtocol}},
     inbound::{error::ListenerUsecaseError, listener_usecase::ListenerUsecase}, outbound::listener::ListenerControllerPort,
 };
 use std::{net::SocketAddr, sync::Arc};

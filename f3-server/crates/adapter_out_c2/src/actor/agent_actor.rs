@@ -1,5 +1,4 @@
-use application::domain::model::{agent_model::{AgentModel, AgentStatus}, listener_model::ListenerId};
-use application::domain::model::agent_model::AgentId;
+use application::domain::model::{agent_model::{AgentModel, AgentStatus}, id::{AgentId, ListenerId}};
 use rand::Rng;
 use tokio::sync::mpsc::{self, UnboundedSender};
 use x25519_dalek::{PublicKey, StaticSecret, x25519};
@@ -20,8 +19,8 @@ pub struct AgentActor {
 impl Into<AgentModel> for &mut AgentActor {
     fn into(self) -> AgentModel {
         AgentModel { 
-            id: self.id,
-            listener_id: self.parent_listener_id,
+            id: self.id.clone(),
+            listener_id: self.parent_listener_id.clone(),
             status: self.status.clone(),
             session_pubkey: self.session_pubkey,
             shared_secret: self.shared_secret,
@@ -81,10 +80,10 @@ pub struct AgentHandle {
 impl AgentHandle {
     pub fn new(parent_listener_id: ListenerId, agent_id: AgentId, received_pubkey: [u8;32], c2_manager_sender: UnboundedSender<C2Message>) -> Self {
         let (sender, receiver) = mpsc::unbounded_channel();
-        let mut actor = AgentActor::new(agent_id, parent_listener_id, received_pubkey, c2_manager_sender, receiver);
+        let mut actor = AgentActor::new(agent_id, parent_listener_id.clone(), received_pubkey, c2_manager_sender, receiver);
         let model = AgentModel {
             id: actor.id.clone(),
-            listener_id: parent_listener_id,
+            listener_id: parent_listener_id.clone(),
             status: actor.status.clone(),
             session_pubkey: actor.session_pubkey.clone(),
             shared_secret: actor.shared_secret.clone(),
