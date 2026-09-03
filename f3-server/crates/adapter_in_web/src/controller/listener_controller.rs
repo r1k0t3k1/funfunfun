@@ -1,4 +1,5 @@
 use actix_web::{Responder, get, http::StatusCode, post, web};
+use uuid::Uuid;
 
 use crate::{
     dto::listener_dto::{
@@ -6,7 +7,7 @@ use crate::{
     }, error::ApiError, response::ResponseBody, state::AppState
 };
 
-use application::domain::model::{id::{Id, ListenerId}, listener_model::ListenerProtocol};
+use application::domain::model::{id::ListenerId, listener_model::ListenerProtocol};
 
 #[utoipa::path(
     context_path = "/listener",
@@ -86,9 +87,9 @@ pub async fn start_listener(
 ) -> Result<impl Responder, ApiError> {
     let listener_id = req
         .listener_id
-        .parse::<uuid::Uuid>()
+        .parse::<Uuid>()
         .map_err(|_| ApiError::BadRequest {detail: "Failed to parse listener id".to_string()})
-        .map(|id| ListenerId::new(id))?;
+        .map(|id| id.into())?;
 
     state
         .listener_usecase
@@ -115,12 +116,12 @@ pub async fn stop_listener(
 ) -> Result<impl Responder, ApiError> {
     let listener_id = req
         .listener_id
-        .parse::<uuid::Uuid>()
+        .parse::<Uuid>()
         .map_err(|e| {
             log::warn!("{e}");
             ApiError::BadRequest {detail: "Failed to parse listener id".to_string()}
         })
-        .map(|id| ListenerId::new(id))?;
+        .map(|id| id.into())?;
 
     state
         .listener_usecase
@@ -147,9 +148,9 @@ pub async fn remove_listener(
 ) -> Result<impl Responder, ApiError> {
     let listener_id = req
         .listener_id
-        .parse::<uuid::Uuid>()
+        .parse::<Uuid>()
         .map_err(|_| ApiError::BadRequest {detail: "Failed to parse listener id".to_string()})
-        .map(|id| ListenerId::new(id))?;
+        .map(|id| id.into())?;
 
     state
         .listener_usecase

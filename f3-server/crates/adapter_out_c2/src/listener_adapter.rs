@@ -1,7 +1,6 @@
 use std::net::SocketAddr;
 
 use application::{domain::model::{id::ListenerId, listener_model::{ListenerModel, ListenerProtocol}}, outbound::{error::C2Error, listener::ListenerControllerPort}};
-use uuid::Uuid;
 use crate::actor::c2_manager_actor::C2ManagerHandle;
 
 pub struct ListenerAdapter {

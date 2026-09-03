@@ -321,7 +321,6 @@ dependencies = [
  "tokio",
  "tokio-util",
  "util",
- "uuid",
  "x25519-dalek",
  "zerocopy",
  "zerocopy-derive",

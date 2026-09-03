@@ -2,7 +2,6 @@ use std::net::SocketAddr;
 
 use application::domain::model::{id::ListenerId, listener_model::{ListenerModel, ListenerProtocol}};
 use tokio::sync::mpsc;
-use uuid::Uuid;
 
 use crate::{c2_message::{C2Message, ListenerMessage}, listener::{http::HttpListener, listener::ListenerPort}};
 

