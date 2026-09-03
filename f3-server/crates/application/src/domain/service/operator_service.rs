@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     domain::model::{
-        operator_model::{Operator, OperatorId},
-        role_model::Role,
+        id::OperatorId, operator_model::OperatorModel, role_model::Role
     },
     inbound::{error::OperatorUsecaseError, operator_usecase::OperatorUsecase},
     outbound::operator_repository::OperatorRepository,
@@ -26,7 +25,7 @@ impl OperatorService {
 
 #[async_trait::async_trait]
 impl OperatorUsecase for OperatorService {
-    async fn list_operators(&self) -> Result<Vec<Operator>, OperatorUsecaseError> {
+    async fn list_operators(&self) -> Result<Vec<OperatorModel>, OperatorUsecaseError> {
         self.operator_repository
             .list()
             .await
@@ -36,28 +35,27 @@ impl OperatorUsecase for OperatorService {
     async fn get_operator(
         &self,
         operator_id: OperatorId,
-    ) -> Result<Option<Operator>, OperatorUsecaseError> {
+    ) -> Result<Option<OperatorModel>, OperatorUsecaseError> {
         self.operator_repository
-            .find_by_id(operator_id.to_string())
+            .find_by_id(operator_id)
             .await
             .map_err(|e| OperatorUsecaseError::RepositoryError(e.into()))
     }
 
     async fn register_operator(
         &self,
-        operator_id: OperatorId,
-        password: String,
         name: String,
+        password: String,
         description: String,
         role: Role,
-    ) -> Result<Operator, OperatorUsecaseError> {
+    ) -> Result<OperatorModel, OperatorUsecaseError> {
         self.operator_repository
-            .insert(operator_id.to_string(), password, name, description, role, false)
+            .insert(name, password, description, role, false)
             .await
             .map_err(|e| OperatorUsecaseError::RepositoryError(e.into()))
     }
 
-    async fn toggle_status(&self, operator_id: OperatorId) -> Result<Operator, OperatorUsecaseError> {
+    async fn toggle_status(&self, operator_id: OperatorId) -> Result<OperatorModel, OperatorUsecaseError> {
         let mut operator = self.
             operator_repository
             .find_by_id(operator_id)

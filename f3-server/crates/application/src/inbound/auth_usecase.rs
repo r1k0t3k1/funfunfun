@@ -1,4 +1,4 @@
-use crate::domain::model::{operator_model::Operator, session_model::Session};
+use crate::domain::model::{id::{OperatorId, SessionId}, operator_model::OperatorModel, session_model::SessionModel};
 
 use super::error::AuthUsecaseError;
 
@@ -6,16 +6,16 @@ use super::error::AuthUsecaseError;
 pub trait AuthUsecase: Send + Sync {
     async fn authenticate_operator(
         &self,
-        operator_id: String,
+        operator_id: OperatorId,
         password: String,
-    ) -> Result<Session, AuthUsecaseError>;
+    ) -> Result<SessionModel, AuthUsecaseError>;
 
-    async fn is_valid_session(&self, session_id: String) -> Result<bool, AuthUsecaseError>;
+    async fn is_valid_session(&self, session_id: SessionId) -> Result<bool, AuthUsecaseError>;
 
     async fn get_operator_from_session(
         &self,
-        session_id: String,
-    ) -> Result<Option<Operator>, AuthUsecaseError>;
+        session_id: SessionId,
+    ) -> Result<Option<OperatorModel>, AuthUsecaseError>;
 
-    async fn logout(&self, session_id: String) -> Result<(), AuthUsecaseError>;
+    async fn logout(&self, session_id: SessionId) -> Result<(), AuthUsecaseError>;
 }

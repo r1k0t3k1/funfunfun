@@ -19,10 +19,10 @@ CREATE OR REPLACE FUNCTION increment_version() RETURNS trigger AS '
 
 ---------- role
 CREATE TABLE IF NOT EXISTS roles (
-  role_id VARCHAR(20) PRIMARY KEY
+  name VARCHAR(20) PRIMARY KEY
 );
 
-INSERT INTO roles (role_id)
+INSERT INTO roles (name)
 VALUES 
   ('Admin'),
   ('Write'),
@@ -31,22 +31,21 @@ VALUES
 
 ---------- operator
 CREATE TABLE IF NOT EXISTS operators (
-  operator_id TEXT PRIMARY KEY,
+	id uuid DEFAULT uuidv7() PRIMARY KEY,
   password_hash TEXT NOT NULL,
-  name VARCHAR(255) NOT NULL, 
+  name TEXT NOT NULL,
   description VARCHAR(1024), 
-  role VARCHAR(20) NOT NULL REFERENCES roles(role_id),
+  role VARCHAR(20) NOT NULL REFERENCES roles(name),
   is_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   version BIGINT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 );
 
-INSERT INTO operators (operator_id, password_hash, name, description, role, is_enabled)
+INSERT INTO operators (name, password_hash, description, role, is_enabled)
 VALUES (
   'administrator',
   '$argon2id$v=19$m=19456,t=2,p=1$OgYHvYo/Il/LCzNJtRTnHQ$i+oS59Fue3lg+4xKHOw96qqGWV8uZ+1ZPglSMwLFwKA', -- password
-  'administrator',
   '全体管理者',
   'Admin',
   TRUE
@@ -54,7 +53,6 @@ VALUES (
 (
   'reader',
   '$argon2id$v=19$m=19456,t=2,p=1$OgYHvYo/Il/LCzNJtRTnHQ$i+oS59Fue3lg+4xKHOw96qqGWV8uZ+1ZPglSMwLFwKA', -- password
-  'reader',
   '読み取り権限アカウント',
   'Read',
   TRUE
@@ -62,7 +60,6 @@ VALUES (
 (
   'writer',
   '$argon2id$v=19$m=19456,t=2,p=1$OgYHvYo/Il/LCzNJtRTnHQ$i+oS59Fue3lg+4xKHOw96qqGWV8uZ+1ZPglSMwLFwKA', -- password
-  'writer',
   '書き込み権限アカウント',
   'Write',
   TRUE
@@ -79,10 +76,49 @@ CREATE TRIGGER trg_20_operators_updated_at_trigger
 
 ---------- session
 CREATE TABLE sessions (
-	session_id  VARCHAR(64) PRIMARY KEY DEFAULT encode(gen_random_bytes(32), 'hex'),
-	operator_id TEXT NOT NULL REFERENCES operators(operator_id),
+	id uuid DEFAULT uuidv7() PRIMARY KEY,
+	operator_id uuid NOT NULL REFERENCES operators(id),
   expire_at TIMESTAMPTZ NOT NULL DEFAULT now() + interval '24 hours',
 	attribute   HSTORE
 );
 ----------
 
+---------- protocols
+CREATE TABLE IF NOT EXISTS protocols (
+  name VARCHAR(20) PRIMARY KEY
+);
+
+INSERT INTO protocols (name)
+VALUES 
+  ('TCP'),
+  ('HTTP'),
+  ('HTTPS'),
+  ('DNS');
+---------- 
+
+---------- listener
+CREATE TABLE listeners (
+	id uuid DEFAULT uuidv7() PRIMARY KEY,
+  name TEXT NOT NULL,
+  protocol VARCHAR(20) NOT NULL REFERENCES protocols(name),
+  is_running BOOLEAN NOT NULL, 
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+);
+----------
+
+---------- agents
+CREATE TABLE agents (
+	id uuid DEFAULT uuidv7() PRIMARY KEY,
+  listener_id uuid NOT NULL REFERENCES listeners(id),
+  process_id INTEGER NOT NULL,
+  thread_id INTEGER NOT NULL,
+  arch TEXT NOT NULL,  -- x64 or x86
+  is_admin BOOLEAN NOT NULL,
+  process_name TEXT NOT NULL,
+  os TEXT NOT NULL,
+  domain_name TEXT NOT NULL,
+  computer_name TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+);
+----------

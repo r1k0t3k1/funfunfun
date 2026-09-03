@@ -7,7 +7,7 @@ use actix_web::{
     Error, HttpMessage,
     dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
 };
-use application::domain::model::{operator_model::Operator, role_model::Role};
+use application::domain::model::{operator_model::OperatorModel, role_model::Role};
 use futures_util::future::LocalBoxFuture;
 
 use crate::error::ApiError;
@@ -21,7 +21,7 @@ pub enum RoleRequirement {
 }
 
 impl RoleRequirement {
-    pub fn check_permission(&self, operator: &Operator) -> bool {
+    pub fn check_permission(&self, operator: &OperatorModel) -> bool {
         match self {
             Self::Is(r) => operator.role == *r,
             Self::Not(rs) => !rs.check_permission(operator),
@@ -92,7 +92,7 @@ where
         Box::pin(async move {
             let operator = req
                 .extensions()
-                .get::<Operator>()
+                .get::<OperatorModel>()
                 .ok_or_else(|| ApiError::Unauthorized)?
                 .clone();
             let has_permission = required_role.check_permission(&operator);

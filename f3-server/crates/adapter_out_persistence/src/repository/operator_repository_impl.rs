@@ -1,9 +1,11 @@
+use application::domain::model::id::OperatorId;
 use application::domain::model::role_model::Role;
 use sqlx::PgPool;
 
-use application::domain::model::operator_model::Operator;
+use application::domain::model::operator_model::OperatorModel;
 use application::outbound::error::RepositoryError;
 use application::outbound::operator_repository::OperatorRepository;
+use sqlx::types::Uuid;
 
 use crate::entity::operator_entity::OperatorEntity;
 use crate::entity::role_entity::RoleEntity;
@@ -21,11 +23,11 @@ impl OperatorRepositoryImpl {
 
 #[async_trait::async_trait]
 impl OperatorRepository for OperatorRepositoryImpl {
-    async fn find_by_id(&self, operator_id: String) -> Result<Option<Operator>, RepositoryError> {
+    async fn find_by_id(&self, operator_id: OperatorId) -> Result<Option<OperatorModel>, RepositoryError> {
         sqlx::query_as!(
             OperatorEntity,
             r#"SELECT 
-                  operator_id,
+                  id,
                   name,
                   password_hash,
                   description,
@@ -35,9 +37,9 @@ impl OperatorRepository for OperatorRepositoryImpl {
                   is_enabled,
                   version
               FROM operators
-              WHERE operator_id = $1
+              WHERE id = $1
             "#,
-            operator_id.into()
+            Into::<Uuid>::into(operator_id),
         )
         .fetch_optional(&self.connection)
         .await
@@ -45,11 +47,11 @@ impl OperatorRepository for OperatorRepositoryImpl {
         .map_err(|e| RepositoryError::Infrastructure(e.into()))
     }
 
-    async fn list(&self) -> Result<Vec<Operator>, RepositoryError> {
+    async fn list(&self) -> Result<Vec<OperatorModel>, RepositoryError> {
         sqlx::query_as!(
             OperatorEntity,
             r#"SELECT 
-                  operator_id,
+                  id,
                   name,
                   password_hash,
                   description,
@@ -69,25 +71,23 @@ impl OperatorRepository for OperatorRepositoryImpl {
 
     async fn insert(
         &self,
-        id: String,
-        password_hash: String,
         name: String,
+        password_hash: String,
         description: String,
         role: Role,
         is_enabled: bool,
-    ) -> Result<Operator, RepositoryError> {
+    ) -> Result<OperatorModel, RepositoryError> {
         sqlx::query_as!(
             OperatorEntity,
-            r#"INSERT INTO operators (operator_id, password_hash, name, description, role, is_enabled)
+            r#"INSERT INTO operators (name, password_hash, description, role, is_enabled)
                VALUES (
                     $1,
                     $2,
                     $3,
                     $4,
-                    $5,
-                    $6
+                    $5
                ) RETURNING 
-                operator_id,
+                id,
                 name,
                 password_hash,
                 description, 
@@ -97,9 +97,8 @@ impl OperatorRepository for OperatorRepositoryImpl {
                 created_at,
                 updated_at; 
             "#,
-            id.into(),
-            password_hash,
             name,
+            password_hash,
             description,
             role.to_string(),
             is_enabled 
@@ -110,18 +109,18 @@ impl OperatorRepository for OperatorRepositoryImpl {
         .map_err(|e| RepositoryError::Infrastructure(e.into()))
     }
 
-    async fn save(&self, operator: Operator) -> Result<Operator, RepositoryError> {
+    async fn save(&self, operator: OperatorModel) -> Result<OperatorModel, RepositoryError> {
         sqlx::query_as!(
             OperatorEntity,
             r#"UPDATE operators
-               SET password_hash = $2,
-                   name = $3,
+               SET name = $2,
+                   password_hash = $3,
                    description = $4,
                    role = $5,
                    is_enabled = $6
-               WHERE operator_id = $1
+               WHERE id = $1
                RETURNING 
-                operator_id,
+                id,
                 name,
                 password_hash,
                 description, 
@@ -131,9 +130,9 @@ impl OperatorRepository for OperatorRepositoryImpl {
                 created_at,
                 updated_at; 
             "#,
-            operator.operator_id.into(),
-            operator.password_hash,
+            Into::<Uuid>::into(operator.id),
             operator.name,
+            operator.password_hash,
             operator.description,
             operator.role.to_string(),
             operator.is_enabled,

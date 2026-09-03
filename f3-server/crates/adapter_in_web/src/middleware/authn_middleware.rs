@@ -8,7 +8,9 @@ use actix_web::{
     dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
     web,
 };
+use application::domain::model::id::SessionId;
 use futures_util::future::LocalBoxFuture;
+use uuid::Uuid;
 
 use crate::{error::ApiError, state::AppState};
 
@@ -73,19 +75,20 @@ where
             let re = regex::Regex::new(r"\s*Bearer\s*").unwrap();
             let session_token = re.replace_all(bearer_token, "").to_string();
 
-            if session_token.len() != 64 {
+            let Ok(uuid) = Uuid::try_parse(&session_token) else {
                 return Err(ApiError::Unauthorized.into());
-            }
+            };
+
+            let session_id = SessionId::from(uuid);
 
             let app_state = req
                 .app_data::<web::Data<AppState>>()
                 .clone()
                 .ok_or_else(|| ApiError::InternelServerError)?;
-            //.ok_or_else(|| ApiError::InternelServerError(anyhow::anyhow!("Usecase not registered")))?;
 
             let is_valid_session = app_state
                 .auth_usecase
-                .is_valid_session(session_token.clone())
+                .is_valid_session(session_id.clone())
                 .await
                 .map_err(|_| ApiError::Unauthorized)?;
 
@@ -95,10 +98,12 @@ where
 
             let operator = app_state
                 .auth_usecase
-                .get_operator_from_session(session_token)
+                .get_operator_from_session(session_id.clone())
                 .await
-                .map_err(|e| ApiError::InternelServerError)?
-                //.map_err(|e| ApiError::UsecaseError(e))?
+                .map_err(|e| {
+                    log::warn!("{e}");
+                    ApiError::InternelServerError
+                })?
                 .ok_or_else(|| ApiError::Unauthorized)?;
 
             if operator.is_enabled == false {

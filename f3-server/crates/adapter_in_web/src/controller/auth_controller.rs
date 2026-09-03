@@ -4,6 +4,8 @@ use crate::state::AppState;
 use crate::error::ApiError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, Responder, post, web};
+use application::domain::model::id::{OperatorId, SessionId};
+use uuid::Uuid;
 
 #[utoipa::path(
     context_path = "/auth",
@@ -17,13 +19,20 @@ pub async fn login(
     state: web::Data<AppState>,
     cred: web::Json<AuthenticateRequest>,
 ) -> Result<impl Responder, ApiError> {
+    let uuid = Uuid::try_parse(&cred.operator_id)
+        .map_err(|e| {
+            log::warn!("{e}");
+            ApiError::BadRequest { detail: "Invalid operator id".to_string() }
+        })?;
+
+    let operator_id = OperatorId::from(uuid);
     let session = state
         .auth_usecase
-        .authenticate_operator(cred.operator_id.clone(), cred.password.clone())
+        .authenticate_operator(operator_id, cred.password.clone())
         .await?;
 
     Ok(ResponseBody::ok(StatusCode::OK, AuthenticatedResponse {
-        access_token: session.session_id,
+        access_token: session.id.to_string(),
     }))
 }
 
@@ -42,10 +51,17 @@ pub async fn logout(
         return Ok(ResponseBody::ok(StatusCode::OK, ())); // セッションなくてもとりあえずOK返す
     };
 
+    // パース失敗してもとりあえずOK返す
+    let Ok(uuid) = Uuid::try_parse(&session_id.value()) else {
+        return Ok(ResponseBody::ok(StatusCode::OK, ()));
+    };
+
+    let session_id = SessionId::from(uuid);
+
     // ログアウト失敗してもとりあえずOK返す
     let _ = state
         .auth_usecase
-        .logout(session_id.value().to_string())
+        .logout(session_id)
         .await;
 
     Ok(ResponseBody::ok(StatusCode::OK, ()))
