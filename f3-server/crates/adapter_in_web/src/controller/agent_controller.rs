@@ -1,4 +1,6 @@
 use actix_web::{Responder, get, http::StatusCode, web};
+use application::domain::model::id::{AgentId, ListenerId};
+use uuid::Uuid;
 
 use crate::{
     dto::agent_dto::{AgentResponse, GetAgentRequest, ListAgentRequest}, error::ApiError, response::ResponseBody, state::AppState
@@ -18,12 +20,13 @@ use crate::{
 )]
 #[get("/list")]
 pub async fn list_agents(state: web::Data<AppState>, agent_request: web::Query<ListAgentRequest>) -> Result<impl Responder, ApiError> {
-    let listener_id = agent_request.listener_id.parse()
-        .map_err(|e| ApiError::BadRequest { detail: format!("Invalid Listener id: {e}") })?;
+    let listener_id: ListenerId = agent_request.listener_id.parse::<Uuid>()
+        .map_err(|e| ApiError::BadRequest { detail: format!("Invalid Listener id: {e}") })
+        .map(|id| id.into())?;
 
     let response_json = state
         .agent_usecase
-        .list_agents(listener_id)
+        .list_agents(listener_id.clone())
         .await
         .map_err(|e| {
             log::warn!("{e}");
@@ -55,8 +58,9 @@ pub async fn list_agents(state: web::Data<AppState>, agent_request: web::Query<L
 )]
 #[get("/get")]
 pub async fn get_agent(state: web::Data<AppState>, agent_request: web::Query<GetAgentRequest>) -> Result<impl Responder, ApiError> {
-    let agent_id = agent_request.agent_id.parse()
-        .map_err(|e| ApiError::BadRequest { detail: format!("Invalid Agent id: {e}") })?;
+    let agent_id = agent_request.agent_id.parse::<Uuid>()
+        .map_err(|e| ApiError::BadRequest { detail: format!("Invalid Agent id: {e}") })
+        .map(|id| id.into())?;
 
     let response_json = state
         .agent_usecase

@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use crate::{
-    domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol},
+    domain::model::{id::ListenerId, listener_model::{ListenerModel, ListenerProtocol}},
     outbound::error::C2Error,
 };
 

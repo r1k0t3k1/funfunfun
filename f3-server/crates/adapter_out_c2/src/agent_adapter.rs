@@ -1,4 +1,4 @@
-use application::{domain::model::{agent_model::{AgentId, AgentModel}, listener_model::ListenerId }, outbound::{agent::AgentControllerPort, error::C2Error}};
+use application::{domain::model::{agent_model::AgentModel, id::{AgentId, ListenerId}}, outbound::{agent::AgentControllerPort, error::C2Error}};
 use crate::actor::c2_manager_actor::C2ManagerHandle;
 
 pub struct AgentAdapter {

@@ -1,7 +1,6 @@
 use std::net::SocketAddr;
 
-use application::{domain::model::listener_model::{ListenerModel, ListenerProtocol}, outbound::{error::C2Error, listener::ListenerControllerPort}};
-use uuid::Uuid;
+use application::{domain::model::{id::ListenerId, listener_model::{ListenerModel, ListenerProtocol}}, outbound::{error::C2Error, listener::ListenerControllerPort}};
 use crate::actor::c2_manager_actor::C2ManagerHandle;
 
 pub struct ListenerAdapter {
@@ -31,21 +30,21 @@ impl ListenerControllerPort for ListenerAdapter {
             .map_err(|e| C2Error::Unexpected(e))
     }
 
-    async fn start(&self, listener_id: Uuid) -> Result<(), C2Error> {
+    async fn start(&self, listener_id: ListenerId) -> Result<(), C2Error> {
         self.c2_manager_handle
             .start_listener(listener_id)
             .await
             .map_err(|e| C2Error::Unexpected(e))
     }
 
-    async fn stop(&self, listener_id: Uuid) -> Result<(), C2Error> {
+    async fn stop(&self, listener_id: ListenerId) -> Result<(), C2Error> {
         self.c2_manager_handle
             .stop_listener(listener_id)
             .await
             .map_err(|e| C2Error::Unexpected(e))
     }
 
-    async fn remove(&self, listener_id: Uuid) -> Result<(), C2Error> {
+    async fn remove(&self, listener_id: ListenerId) -> Result<(), C2Error> {
         self.c2_manager_handle
             .remove_listener(listener_id)
             .await

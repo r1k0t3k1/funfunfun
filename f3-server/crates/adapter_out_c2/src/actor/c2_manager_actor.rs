@@ -1,6 +1,6 @@
-use application::domain::model::agent_model::{AgentId, AgentModel};
-use application::domain::model::listener_model::{ListenerId, ListenerModel, ListenerProtocol};
-use uuid::Uuid;
+use application::domain::model::agent_model::AgentModel;
+use application::domain::model::id::{AgentId, ListenerId};
+use application::domain::model::listener_model::{ListenerModel, ListenerProtocol};
 use std::{collections::HashMap, net::SocketAddr};
 use tokio::sync::{mpsc, oneshot};
 
@@ -32,6 +32,7 @@ impl C2ManagerActor {
     fn handle_message(&mut self, msg: C2Message) {
         match msg {
             C2Message::QueryListener { listener_id, reply } => {
+                // SQLXでいい
                 let model = self.listener_handles.get(&listener_id)
                     .map(|l| l.model.clone())
                     .ok_or(anyhow::anyhow!("Listener {listener_id} not found"));
@@ -39,6 +40,7 @@ impl C2ManagerActor {
             },
 
             C2Message::ListListener { reply } => {
+                // SQLXでいい
                 let models: Vec<ListenerModel> = self.listener_handles
                     .values()
                     .into_iter()
@@ -48,8 +50,8 @@ impl C2ManagerActor {
             },
 
             C2Message::AddListener { name, addr, protocol, reply } => {
-                let listener_id = Uuid::new_v4();
-                let listener_handle = ListenerHandle::new(listener_id, name, addr, protocol, self.sender.clone());
+                let listener_id = ListenerId::new();
+                let listener_handle = ListenerHandle::new(listener_id.clone(), name, addr, protocol, self.sender.clone());
                 let model = listener_handle.model.clone();
                 self.listener_handles.insert(listener_id, listener_handle);
                 let _ = reply.send(Ok(model));
@@ -65,9 +67,9 @@ impl C2ManagerActor {
             },
 
             C2Message::AddAgent { listener_id, reply, received_pubkey } => {
-                let agent_id = Uuid::new_v4();
-                let agent_handle = AgentHandle::new(listener_id, agent_id, received_pubkey, self.sender.clone());
-                self.agent_handles.insert(agent_id, agent_handle);
+                let agent_id = AgentId::new();
+                let agent_handle = AgentHandle::new(listener_id, agent_id.clone(), received_pubkey, self.sender.clone());
+                self.agent_handles.insert(agent_id.clone(), agent_handle);
                 log::info!("received pubkey: {:?}", received_pubkey);
 
                 let agent_handle = self.agent_handles.get(&agent_id).unwrap();

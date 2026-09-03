@@ -1,8 +1,6 @@
 use std::net::SocketAddr;
 
-use uuid::Uuid;
-
-pub type ListenerId = Uuid;
+use crate::domain::model::id::ListenerId;
 
 #[derive(Clone)]
 pub enum ListenerProtocol {
