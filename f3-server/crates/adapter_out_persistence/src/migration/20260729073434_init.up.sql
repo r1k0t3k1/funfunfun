@@ -83,25 +83,15 @@ CREATE TABLE sessions (
 );
 ----------
 
----------- protocols
-CREATE TABLE IF NOT EXISTS protocols (
-  name VARCHAR(20) PRIMARY KEY
-);
-
-INSERT INTO protocols (name)
-VALUES 
-  ('TCP'),
-  ('HTTP'),
-  ('HTTPS'),
-  ('DNS');
----------- 
-
 ---------- listener
 CREATE TABLE listeners (
 	id uuid DEFAULT uuidv7() PRIMARY KEY,
   name TEXT NOT NULL,
-  protocol VARCHAR(20) NOT NULL REFERENCES protocols(name),
+  lhost TEXT NOT NULL,
+  lport INTEGER NOT NULL CHECK (lport > 0 AND lport <= 65535),
   is_running BOOLEAN NOT NULL, 
+  checkin_key BYTEA NOT NULL DEFAULT gen_random_bytes(32) CHECK (octet_length(checkin_key) = 32), -- キー長32byteの制約
+  config TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 );
 ----------
@@ -110,6 +100,7 @@ CREATE TABLE listeners (
 CREATE TABLE agents (
 	id uuid DEFAULT uuidv7() PRIMARY KEY,
   listener_id uuid NOT NULL REFERENCES listeners(id),
+  shared_secret BYTEA NOT NULL CHECK (octet_length(shared_secret) = 32), -- キー長32byteの制約
   process_id INTEGER NOT NULL,
   thread_id INTEGER NOT NULL,
   arch TEXT NOT NULL,  -- x64 or x86

@@ -1,4 +1,4 @@
-use crate::domain::model::{id::ListenerId, listener_model::{ListenerModel, ListenerProtocol}};
+use crate::domain::model::{id::ListenerId, listener_model::{ListenerConfig, ListenerModel}};
 
 use super::error::ListenerUsecaseError;
 
@@ -11,7 +11,7 @@ pub trait ListenerUsecase: Send + Sync {
         name: String,
         lhost: String,
         lport: u16,
-        protocol: ListenerProtocol,
+        config: ListenerConfig,
     ) -> Result<ListenerModel, ListenerUsecaseError>;
 
     async fn start_listener(&self, listener_id: ListenerId) -> Result<(), ListenerUsecaseError>;

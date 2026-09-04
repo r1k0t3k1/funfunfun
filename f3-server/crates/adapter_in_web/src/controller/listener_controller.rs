@@ -7,8 +7,6 @@ use crate::{
     }, error::ApiError, response::ResponseBody, state::AppState
 };
 
-use application::domain::model::{id::ListenerId, listener_model::ListenerProtocol};
-
 #[utoipa::path(
     context_path = "/listener",
     security(
@@ -51,16 +49,13 @@ pub async fn create_listener(
     state: web::Data<AppState>,
     listener_data: web::Json<CreateListenerRequest>,
 ) -> Result<impl Responder, ApiError> {
-    let protocol = ListenerProtocol::try_from(listener_data.protocol.to_string())
-        .map_err(|_| ApiError::BadRequest {detail: "Failed to parse protocol".to_string()})?;
-
     state
         .listener_usecase
         .create_listener(
             listener_data.name.to_string(),
             listener_data.lhost.to_string(),
             listener_data.lport,
-            protocol,
+            listener_data.config.clone().into(),
         )
         .await
         .map(|result| ResponseBody::ok(StatusCode::OK, ListenerResponse::from(result)))

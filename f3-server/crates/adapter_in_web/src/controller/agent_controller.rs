@@ -24,7 +24,7 @@ pub async fn list_agents(state: web::Data<AppState>, agent_request: web::Query<L
         .map_err(|e| ApiError::BadRequest { detail: format!("Invalid Listener id: {e}") })
         .map(|id| id.into())?;
 
-    let response_json = state
+    let response_json: Vec<AgentResponse> = state
         .agent_usecase
         .list_agents(listener_id.clone())
         .await
@@ -33,14 +33,8 @@ pub async fn list_agents(state: web::Data<AppState>, agent_request: web::Query<L
             ApiError::NotFound
         })?
         .iter()
-        .map(|a| AgentResponse {
-            id: a.id.to_string(),
-            listener_id: listener_id.to_string(), 
-            status: format!("{:?}", a.status),
-            session_pubkey: a.session_pubkey,
-            shared_secret: a.shared_secret,
-        })
-        .collect::<Vec<AgentResponse>>();
+        .map(|a| Into::<AgentResponse>::into(a.clone()))
+        .collect();
 
     Ok(ResponseBody::ok(StatusCode::OK, response_json))
 }
@@ -66,13 +60,7 @@ pub async fn get_agent(state: web::Data<AppState>, agent_request: web::Query<Get
         .agent_usecase
         .get_agent(agent_id)
         .await
-        .map(|a| AgentResponse {
-            id: a.id.to_string(),
-            listener_id: a.listener_id.to_string(), 
-            status: format!("{:?}", a.status),
-            session_pubkey: a.session_pubkey,
-            shared_secret: a.shared_secret,
-        })
+        .map(|a| Into::<AgentResponse>::into(a.clone()))
         .map_err(|e| {
             log::warn!("{e}");
             ApiError::NotFound

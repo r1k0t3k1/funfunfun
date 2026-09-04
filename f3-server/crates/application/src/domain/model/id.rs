@@ -18,6 +18,12 @@ macro_rules! id {
             }
         }
 
+        impl From<u128> for $t {
+            fn from(value: u128) -> Self {
+                Self(Uuid::from_u128(value))
+            }
+        }
+
         impl Into<Uuid> for $t {
             fn into(self) -> Uuid {
                 self.0

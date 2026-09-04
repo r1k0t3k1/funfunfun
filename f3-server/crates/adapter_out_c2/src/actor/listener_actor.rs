@@ -1,19 +1,17 @@
-use std::net::SocketAddr;
-
-use application::domain::model::{id::ListenerId, listener_model::{ListenerModel, ListenerProtocol}};
+use application::domain::model::listener_model::ListenerModel;
 use tokio::sync::mpsc;
 
-use crate::{c2_message::{C2Message, ListenerMessage}, listener::{http::HttpListener, listener::ListenerPort}};
+use crate::{c2_message::{C2Message, ListenerMessage}, listener::{http::HttpListener, listener::Listener}};
 
 pub struct ListenerActor {
     receiver: mpsc::UnboundedReceiver<ListenerMessage>,
-    listener: Box<dyn ListenerPort>,
+    listener: Box<dyn Listener>,
 }
 
 impl ListenerActor {
     pub fn new(
         receiver: mpsc::UnboundedReceiver<ListenerMessage>,
-        listener: Box<dyn ListenerPort>,
+        listener: Box<dyn Listener>,
     ) -> Self {
         Self { receiver, listener }
     }
@@ -33,26 +31,28 @@ impl ListenerActor {
             ListenerMessage::Stop { reply } => {
                 let _ = reply.send(self.listener.stop().await);
             },
-
-            ListenerMessage::Query { reply } => {
-                let _ = reply.send(Ok(self.listener.listener_model()));
-            },
         }
     }
 }
 
 pub struct ListenerHandle {
     pub sender: mpsc::UnboundedSender<ListenerMessage>,
-    pub model: ListenerModel,
 }
 
 impl ListenerHandle {
-    pub fn new(id: ListenerId, name: String, addr: SocketAddr, protocol: ListenerProtocol, c2_manager_sender: mpsc::UnboundedSender<C2Message>) -> Self {
+    pub fn new(model: ListenerModel, c2_manager_sender: mpsc::UnboundedSender<C2Message>) -> Self {
         let (sender, receiver) = mpsc::unbounded_channel();
-        let listener = Box::new(HttpListener::new(id.clone(), name.clone(), addr, protocol.clone(), c2_manager_sender.clone()));
+
+        let listener = match model.config {
+            application::domain::model::listener_model::ListenerConfig::Http {..} => {
+                Box::new(HttpListener::new(model, c2_manager_sender))
+            },
+            application::domain::model::listener_model::ListenerConfig::Tcp {  } => todo!(),
+            application::domain::model::listener_model::ListenerConfig::Dns {  } => todo!(),
+        };
+
         let mut actor = ListenerActor::new(receiver, listener);
         tokio::spawn(async move { actor.run().await });
-        let model = ListenerModel::new(id, name, addr, protocol);
-        Self { sender, model }
+        Self { sender }
     }
 }

@@ -6,6 +6,7 @@ use crate::domain::model::id::{AgentId, ListenerId};
 pub struct AgentModel {
     pub id: AgentId,
     pub listener_id: ListenerId,
+    pub shared_secret: [u8; 32],
     pub process_id: u64,
     pub thread_id: u64,
     pub arch: String,

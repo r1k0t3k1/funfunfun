@@ -333,6 +333,8 @@ dependencies = [
  "application",
  "argon2",
  "async-trait",
+ "serde",
+ "serde_json",
  "sqlx",
  "util",
 ]

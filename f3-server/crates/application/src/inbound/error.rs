@@ -32,6 +32,12 @@ pub enum ListenerUsecaseError {
     #[error("Failed to remove the listener")]
     FailedToRemove,
 
+    #[error("Listener not found")]
+    NotFound,
+    
+    #[error(transparent)]
+    Repository(#[from] RepositoryError),
+
     #[error(transparent)]
     Unexpected(#[from] C2Error),
 }
