@@ -1,17 +1,18 @@
 // @ts-nocheck -- Node 組み込みの test runner 用。@types/node 非導入のため型検査対象外。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { bearer, isValidToken, TOKEN_LENGTH } from "./authHeader.js";
+import { bearer, isValidToken } from "./authHeader.js";
 
-const VALID = "a".repeat(TOKEN_LENGTH);
+// サーバが返すアクセストークンは UUID（セッション ID）。
+const VALID = "01a071be-5682-7186-b28d-633cb1c43ed8";
 
-test("isValidToken: 64文字のトークンを受理する", () => {
+test("isValidToken: UUID 形式のトークンを受理する", () => {
   assert.equal(isValidToken(VALID), true);
 });
 
-test("isValidToken: 長さが違う / null / 非文字列は拒否する", () => {
-  assert.equal(isValidToken("a".repeat(63)), false);
-  assert.equal(isValidToken("a".repeat(65)), false);
+test("isValidToken: UUID でない / null / 非文字列は拒否する", () => {
+  assert.equal(isValidToken("a".repeat(64)), false);
+  assert.equal(isValidToken("not-a-uuid"), false);
   assert.equal(isValidToken(""), false);
   assert.equal(isValidToken(null), false);
   assert.equal(isValidToken(undefined), false);
