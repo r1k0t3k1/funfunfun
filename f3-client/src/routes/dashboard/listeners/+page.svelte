@@ -11,6 +11,7 @@
     stopListener,
     removeListener,
   } from "$lib/api/listener";
+  import { listAgents } from "$lib/api/agent";
   import type {
     ListenerListItem,
     ListenerType,
@@ -22,6 +23,11 @@
   let rows = $state<Row[]>([]);
   let loading = $state(false);
   let errorMessage = $state("");
+
+  // 各 Listener が管理する Agent の接続数。listener.id -> 件数。
+  // `/agent/list?listener_id=<id>` の件数を Listener ごとに集計する。
+  // 取得前・取得失敗時は undefined（UI では "…" を表示）。
+  let agentCounts = $state<Record<string, number>>({});
 
   // 作成モーダルの状態
   let createOpen = $state(false);
@@ -99,11 +105,29 @@
     errorMessage = "";
     try {
       rows = await listListeners();
+      await refreshAgentCounts();
     } catch (e) {
       errorMessage = e instanceof Error ? e.message : "取得に失敗しました";
     } finally {
       loading = false;
     }
+  }
+
+  // 各 Listener の Agent 接続数を並列取得する。
+  // 1 件の取得失敗は全体を止めず、その Listener の件数を 0 として扱う
+  // （Listener 一覧そのものは表示できているため）。
+  async function refreshAgentCounts() {
+    const entries = await Promise.all(
+      rows.map(async (row) => {
+        try {
+          const agents = await listAgents(row.id);
+          return [row.id, agents.length] as const;
+        } catch {
+          return [row.id, 0] as const;
+        }
+      }),
+    );
+    agentCounts = Object.fromEntries(entries);
   }
 
   function resetForm() {
@@ -184,6 +208,7 @@
         <th>名前</th>
         <th>種別</th>
         <th>アドレス</th>
+        <th class="col-num">Agent 数</th>
         <th class="col-action"></th>
       </tr>
     </thead>
@@ -196,6 +221,9 @@
             <span class="badge {protocolBadge(proto)}">{proto}</span>
           </td>
           <td><span class="mono muted">{displayAddr(row)}</span></td>
+          <td class="col-num">
+            <span class="mono">{agentCounts[row.id] ?? "…"}</span>
+          </td>
           <td class="col-action">
             <RowMenu
               actions={[
@@ -299,6 +327,13 @@
   .mono {
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
       "Liberation Mono", monospace;
+  }
+
+  /* Agent 数列は数値なので右寄せ・幅を詰める。 */
+  .col-num {
+    text-align: right;
+    width: 6rem;
+    white-space: nowrap;
   }
 
   .field {
