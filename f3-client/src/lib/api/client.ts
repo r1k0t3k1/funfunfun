@@ -148,8 +148,15 @@ export type AuthenticatedResponse = {
  * openapi.json に `ListenerResponse` スキーマが定義されたため、
  * 生成型（./schema.d.ts）をそのまま利用する。
  * （レスポンスは配列 `ListenerResponse[]` を封筒に包んで返る）
+ *
+ * ただし実サーバは openapi.json に未定義の `is_running`（起動中かどうか）を
+ * 併せて返す（openapi ドリフト）。生成型には現れないため、ここで手動補完する。
+ * openapi.json 側に `is_running` が追加され次第、この補完は不要になる。
  */
-export type ListenerListItem = components["schemas"]["ListenerResponse"];
+export type ListenerListItem = components["schemas"]["ListenerResponse"] & {
+  /** Listener が起動中（listen 状態）かどうか。 */
+  is_running: boolean;
+};
 
 /**
  * /agent/list・/agent/get のレスポンス要素。

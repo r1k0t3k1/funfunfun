@@ -274,6 +274,11 @@ a {
   color: #bc8cff;
   border-color: rgba(163, 113, 247, 0.35);
 }
+.badge-green {
+  background: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+  border-color: rgba(63, 185, 80, 0.35);
+}
 
 /* ---- 通知 ---- */
 .notification {
