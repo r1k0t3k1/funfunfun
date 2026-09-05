@@ -11,6 +11,7 @@
     stopListener,
     removeListener,
   } from "$lib/api/listener";
+  import { listAgents } from "$lib/api/agent";
   import type {
     ListenerListItem,
     ListenerType,
@@ -22,6 +23,12 @@
   let rows = $state<Row[]>([]);
   let loading = $state(false);
   let errorMessage = $state("");
+
+  // Listener ID → 接続中の Agent 数。
+  // 一覧に Agent 数の集計エンドポイントが無いため、Listener ごとに
+  // /agent/list を引いて件数を数える。取得に失敗した Listener は
+  // エントリを持たず、表示上は「—」（不明）になる。
+  let agentCounts = $state<Record<string, number>>({});
 
   // 作成モーダルの状態
   let createOpen = $state(false);
@@ -63,6 +70,11 @@
     return `${row.lhost}:${row.lport}`;
   }
 
+  // 起動状態バッジ。起動中は緑、停止中はグレー。
+  function statusBadge(running: boolean): string {
+    return running ? "badge-green" : "badge-gray";
+  }
+
   // Listener 種別バッジの色分け。
   function protocolBadge(protocol: string): string {
     switch (protocol) {
@@ -99,11 +111,30 @@
     errorMessage = "";
     try {
       rows = await listListeners();
+      await refreshAgentCounts();
     } catch (e) {
       errorMessage = e instanceof Error ? e.message : "取得に失敗しました";
     } finally {
       loading = false;
     }
+  }
+
+  // 各 Listener の接続中 Agent 数を並列で数え直す。
+  // 一部の Listener で取得に失敗しても他の集計は反映する（失敗分は「—」表示）。
+  async function refreshAgentCounts() {
+    const entries = await Promise.all(
+      rows.map(async (row) => {
+        try {
+          const agents = await listAgents(row.id);
+          return [row.id, agents.length] as const;
+        } catch {
+          return null;
+        }
+      }),
+    );
+    agentCounts = Object.fromEntries(
+      entries.filter((e): e is readonly [string, number] => e !== null),
+    );
   }
 
   function resetForm() {
@@ -184,6 +215,8 @@
         <th>名前</th>
         <th>種別</th>
         <th>アドレス</th>
+        <th>状態</th>
+        <th>Agent</th>
         <th class="col-action"></th>
       </tr>
     </thead>
@@ -196,6 +229,14 @@
             <span class="badge {protocolBadge(proto)}">{proto}</span>
           </td>
           <td><span class="mono muted">{displayAddr(row)}</span></td>
+          <td>
+            <span class="badge {statusBadge(row.is_running)}">
+              {row.is_running ? "起動中" : "停止中"}
+            </span>
+          </td>
+          <td>
+            <span class="mono">{agentCounts[row.id] ?? "—"}</span>
+          </td>
           <td class="col-action">
             <RowMenu
               actions={[
