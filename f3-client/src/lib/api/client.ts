@@ -109,17 +109,26 @@ export type StartListenerRequest =
 export type StopListenerRequest = components["schemas"]["StopListenerRequest"];
 
 /**
- * Listener の設定（protocol で判別されるタグ付きユニオン）。
- * サーバの `ListenerConfig`（Http / Tcp / Dns）に対応する。
+ * Listener 作成リクエストの設定（protocol で判別されるタグ付きユニオン）。
+ * サーバの `ListenerConfigRequest`（Http / Tcp / Dns）に対応し、
+ * protocol ごとに構造が変わる（Http のみ path / user_agent 等を持つ）。
  */
-export type ListenerConfig = components["schemas"]["ListenerConfig"];
+export type ListenerConfigRequest =
+  components["schemas"]["ListenerConfigRequest"];
+
+/**
+ * Listener 一覧・取得レスポンスの設定（protocol で判別されるタグ付きユニオン）。
+ * サーバの `ListenerConfigResponse`（Http / Tcp / Dns）に対応する。
+ */
+export type ListenerConfigResponse =
+  components["schemas"]["ListenerConfigResponse"];
 
 /**
  * 作成フォームで選べる Listener 種別（UI 用の概念）。
  * サーバ側は `config.protocol`（Http/Tcp/Dns）＋ `is_ssl` で表現するため、
- * ここでは従来の UI ラベル（TCP/HTTP/HTTPS）を保持し、送信時に config へ変換する。
+ * ここでは UI ラベル（TCP/HTTP/HTTPS/DNS）を保持し、送信時に config へ変換する。
  */
-export type ListenerType = "TCP" | "HTTP" | "HTTPS";
+export type ListenerType = "TCP" | "HTTP" | "HTTPS" | "DNS";
 
 // /operator/toggle_status のリクエスト型（operator_id のみ）。
 export type ToggleOperatorStatusRequest =

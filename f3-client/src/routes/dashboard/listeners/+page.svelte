@@ -31,11 +31,24 @@
   let formLhost = $state("0.0.0.0");
   let formLport = $state(8080);
 
+  // HTTP/HTTPS 選択時のみ使う config（protocol=Http）の詳細設定。
+  // TCP/DNS では送信されない（protocol ごとに config の構造が変わるため）。
+  let formHttpPath = $state("/");
+  let formHttpMethod = $state("GET");
+  let formHttpHostHeader = $state("");
+  let formHttpUserAgent = $state(
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+  );
+
   const typeOptions = [
     { value: "TCP", label: "TCP" },
     { value: "HTTP", label: "HTTP" },
     { value: "HTTPS", label: "HTTPS" },
+    { value: "DNS", label: "DNS" },
   ];
+
+  // Http 系（path 等の詳細設定を持つ protocol）かどうか。
+  const isHttp = $derived(formType === "HTTP" || formType === "HTTPS");
 
   // ListenerResponse.config（protocol で判別されるユニオン）から
   // 表示用の種別ラベルを求める。Http は is_ssl で HTTP/HTTPS を出し分ける。
@@ -57,21 +70,26 @@
         return "badge-blue";
       case "HTTP":
         return "badge-teal";
+      case "DNS":
+        return "badge-purple";
       default:
         return "badge-gray";
     }
   }
 
-  // UI の種別（TCP/HTTP/HTTPS）をサーバの config へ変換する。
+  // UI の種別（TCP/HTTP/HTTPS/DNS）をサーバの config へ変換する。
+  // protocol ごとに config の構造が変わる:
+  //   - Http/Https: path/user_agent/host_header/http_method/is_ssl を送る
+  //   - Tcp/Dns: protocol のみ
   function toConfig(type: ListenerType): CreateListenerRequest["config"] {
     if (type === "TCP") return { protocol: "Tcp" };
+    if (type === "DNS") return { protocol: "Dns" };
     return {
       protocol: "Http",
-      path: "/",
-      user_agent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      host_header: "",
-      http_method: "GET",
+      path: formHttpPath,
+      user_agent: formHttpUserAgent,
+      host_header: formHttpHostHeader,
+      http_method: formHttpMethod,
       is_ssl: type === "HTTPS",
     };
   }
@@ -93,6 +111,11 @@
     formType = "HTTP";
     formLhost = "0.0.0.0";
     formLport = 8080;
+    formHttpPath = "/";
+    formHttpMethod = "GET";
+    formHttpHostHeader = "";
+    formHttpUserAgent =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
   }
 
   async function handleCreate(event: SubmitEvent) {
@@ -223,6 +246,30 @@
         bind:value={formLport}
       />
     </label>
+
+    {#if isHttp}
+      <!-- protocol=Http のときだけ現れる詳細設定。TCP/DNS では送信されない。 -->
+      <label class="field">
+        <span class="field-label">パス</span>
+        <input class="input" placeholder="/" bind:value={formHttpPath} required />
+      </label>
+      <label class="field">
+        <span class="field-label">HTTP メソッド</span>
+        <input class="input" placeholder="GET" bind:value={formHttpMethod} required />
+      </label>
+      <label class="field">
+        <span class="field-label">Host ヘッダ</span>
+        <input
+          class="input"
+          placeholder="example.com（任意）"
+          bind:value={formHttpHostHeader}
+        />
+      </label>
+      <label class="field">
+        <span class="field-label">User-Agent</span>
+        <input class="input" bind:value={formHttpUserAgent} required />
+      </label>
+    {/if}
   </form>
 
   {#snippet footer()}

@@ -233,18 +233,18 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         AgentResponse: {
+            arch: string;
+            computer_name: string;
+            domain_name: string;
             id: string;
+            is_admin: boolean;
             listener_id: string;
+            os: string;
             /** Format: int64 */
             process_id: number;
+            process_name: string;
             /** Format: int64 */
             thread_id: number;
-            arch: string;
-            is_admin: boolean;
-            process_name: string;
-            os: string;
-            domain_name: string;
-            computer_name: string;
             user_name: string;
         };
         AuthenticateRequest: {
@@ -252,34 +252,49 @@ export interface components {
             password: string;
         };
         CreateListenerRequest: {
+            config: components["schemas"]["ListenerConfigRequest"];
             lhost: string;
             /** Format: int32 */
             lport: number;
             name: string;
-            config: components["schemas"]["ListenerConfig"];
         };
-        ListenerResponse: {
-            id: string;
-            name: string;
-            lhost: string;
-            /** Format: int32 */
-            lport: number;
-            config: components["schemas"]["ListenerConfig"];
-        };
-        ListenerConfig: {
-            /** @enum {string} */
-            protocol: "Http";
-            path: string;
-            user_agent: string;
+        ListenerConfigRequest: {
             host_header: string;
             http_method: string;
             is_ssl: boolean;
+            path: string;
+            /** @enum {string} */
+            protocol: "Http";
+            user_agent: string;
         } | {
             /** @enum {string} */
             protocol: "Tcp";
         } | {
             /** @enum {string} */
             protocol: "Dns";
+        };
+        ListenerConfigResponse: {
+            host_header: string;
+            http_method: string;
+            is_ssl: boolean;
+            path: string;
+            /** @enum {string} */
+            protocol: "Http";
+            user_agent: string;
+        } | {
+            /** @enum {string} */
+            protocol: "Tcp";
+        } | {
+            /** @enum {string} */
+            protocol: "Dns";
+        };
+        ListenerResponse: {
+            config: components["schemas"]["ListenerConfigResponse"];
+            id: string;
+            lhost: string;
+            /** Format: int32 */
+            lport: number;
+            name: string;
         };
         RemoveListenerRequest: {
             listener_id: string;
