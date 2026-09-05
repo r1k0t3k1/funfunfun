@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     domain::model::{
-        operator_model::Operator, password_model::{HashedPassword, RawPassword}, session_model::Session,
+        id::SessionId, operator_model::OperatorModel, password_model::{HashedPassword, RawPassword}, session_model::SessionModel
     },
     inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError},
     outbound::{
@@ -38,12 +38,12 @@ impl AuthService {
 impl AuthUsecase for AuthService {
     async fn authenticate_operator(
         &self,
-        operator_id: String,
-        password: String,
-    ) -> Result<Session, AuthUsecaseError> {
+        operator_name: &String,
+        password: &String,
+    ) -> Result<SessionModel, AuthUsecaseError> {
         let operator = self
             .operator_repository
-            .find_by_id(operator_id)
+            .find_by_name(operator_name)
             .await
             .map_err(|e| {
                 log::error!("{e}");
@@ -52,7 +52,7 @@ impl AuthUsecase for AuthService {
                     _ => AuthUsecaseError::Unexpected(e.into()),
                 }
             })?;
-
+        
         // レスポンスタイムによるユーザ列挙を防ぐ
         let Some(operator) = operator else {
             let _ = self.password_hasher.hash(&RawPassword::new("dummydummy".to_string()).unwrap());
@@ -64,9 +64,10 @@ impl AuthUsecase for AuthService {
             return Err(AuthUsecaseError::AuthenticationFailed);
         }
         
-        let raw_password = RawPassword::new(password)
+        let raw_password = RawPassword::new(password.clone())
             .map_err(|_| AuthUsecaseError::AuthenticationFailed)?;
-
+    
+        
         let password_match = self.password_hasher.verify(&raw_password, &HashedPassword::from_phc_string(operator.password_hash));
 
         if password_match == false {
@@ -74,15 +75,15 @@ impl AuthUsecase for AuthService {
         }
 
         self.session_repository
-            .insert(operator.operator_id)
+            .insert(operator.id)
             .await
             .map_err(|e| AuthUsecaseError::Unexpected(e.into()))
     }
 
-    async fn is_valid_session(&self, session_id: String) -> Result<bool, AuthUsecaseError> {
+    async fn is_valid_session(&self, session_id: SessionId) -> Result<bool, AuthUsecaseError> {
         let session = self
             .session_repository
-            .find_by_id(session_id.into())
+            .find_by_id(session_id)
             .await
             .map_err(|e| AuthUsecaseError::Unexpected(e.into()))?
             .ok_or_else(|| AuthUsecaseError::AuthenticationFailed)?;
@@ -96,11 +97,11 @@ impl AuthUsecase for AuthService {
 
     async fn get_operator_from_session(
         &self,
-        session_id: String,
-    ) -> Result<Option<Operator>, AuthUsecaseError> {
+        session_id: SessionId,
+    ) -> Result<Option<OperatorModel>, AuthUsecaseError> {
         let session = self
             .session_repository
-            .find_by_id(session_id.into())
+            .find_by_id(session_id)
             .await
             .map_err(|e| AuthUsecaseError::Unexpected(e.into()))?
             .ok_or_else(|| AuthUsecaseError::AuthenticationFailed)?;
@@ -118,7 +119,7 @@ impl AuthUsecase for AuthService {
         Ok(operator)
     }
 
-    async fn logout(&self, session_id: String) -> Result<(), AuthUsecaseError> {
+    async fn logout(&self, session_id: SessionId) -> Result<(), AuthUsecaseError> {
         self.session_repository
             .delete_by_id(session_id)
             .await

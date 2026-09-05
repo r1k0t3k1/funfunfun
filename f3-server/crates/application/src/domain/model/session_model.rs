@@ -1,13 +1,15 @@
 use std::time::SystemTime;
 
+use crate::domain::model::id::{OperatorId, SessionId};
+
 #[derive(Clone)]
-pub struct Session {
-    pub session_id: String,
-    pub operator_id: String,
+pub struct SessionModel {
+    pub id: SessionId,
+    pub operator_id: OperatorId,
     pub expire_at: SystemTime,
 }
 
-impl Session {
+impl SessionModel {
     pub fn is_expired(&self) -> bool {
         if SystemTime::now() > self.expire_at {
             return true;

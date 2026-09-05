@@ -8,13 +8,25 @@ macro_rules! id {
         pub struct $t(Uuid);
 
         impl $t {
-            pub fn new() -> Self { Self(uuid::Uuid::new_v4()) }
+            pub fn new() -> Self { Self(uuid::Uuid::now_v7()) }
             pub fn to_u128(&self) -> u128 { self.0.as_u128() }
         }
 
         impl From<Uuid> for $t {
             fn from(value: Uuid) -> Self {
                 Self(value)
+            }
+        }
+
+        impl From<u128> for $t {
+            fn from(value: u128) -> Self {
+                Self(Uuid::from_u128(value))
+            }
+        }
+
+        impl Into<Uuid> for $t {
+            fn into(self) -> Uuid {
+                self.0
             }
         }
 
@@ -30,4 +42,5 @@ id!(
     OperatorId,
     ListenerId,
     AgentId,
+    SessionId,
 );

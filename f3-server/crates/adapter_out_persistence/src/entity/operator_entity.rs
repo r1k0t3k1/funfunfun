@@ -1,11 +1,11 @@
-use application::domain::model::operator_model::Operator;
-use sqlx::types::chrono;
+use application::domain::model::operator_model::OperatorModel;
+use sqlx::types::{Uuid, chrono};
 
 use crate::entity::role_entity::RoleEntity;
 
 #[derive(Clone)]
 pub struct OperatorEntity {
-    pub operator_id: String,
+    pub id: Uuid,
     pub name: String,
     pub password_hash: String,
     pub description: Option<String>,
@@ -16,10 +16,10 @@ pub struct OperatorEntity {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-impl Into<Operator> for OperatorEntity {
-    fn into(self) -> Operator {
-        Operator {
-            operator_id: self.operator_id,
+impl Into<OperatorModel> for OperatorEntity {
+    fn into(self) -> OperatorModel {
+        OperatorModel {
+            id: self.id.into(),
             name: self.name,
             password_hash: self.password_hash,
             description: self.description,

@@ -5,8 +5,12 @@ pub enum RepositoryError {
     NotFound,
     #[error("conflict (e.g. optimistic lock)")]
     Conflict,
+    #[error("Invalid key length")]
+    InvalidKey { detail: String },
     #[error("infrastructure failure")]
     Infrastructure(#[source] Box<dyn std::error::Error + Send + Sync>),
+    #[error("Deserialize error")]
+    FailedToDesirialize { detail: String },
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -19,6 +23,9 @@ pub enum HashError {
 pub enum C2Error {
     #[error("Listener {id} not found")]
     NotFound{id : String},
+
+    #[error(transparent)]
+    Repository(#[from] RepositoryError),
 
     #[error(transparent)]
     Unexpected(#[from] anyhow::Error),

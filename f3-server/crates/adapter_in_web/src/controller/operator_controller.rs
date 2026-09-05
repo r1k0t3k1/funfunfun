@@ -6,7 +6,9 @@ use crate::response::ResponseBody;
 use crate::state::AppState;
 use actix_web::http::StatusCode;
 use actix_web::{Responder, get, post, web};
-use application::domain::model::operator_model::Operator;
+use application::domain::model::id::OperatorId;
+use application::domain::model::operator_model::OperatorModel;
+use uuid::Uuid;
 
 #[utoipa::path(
     context_path = "/operator",
@@ -49,9 +51,15 @@ pub async fn get_operator(
     state: web::Data<AppState>,
     operator: web::Query<GetOperatorRequest>,
 ) -> Result<impl Responder, ApiError> {
+    let Ok(uuid) = Uuid::try_parse(&operator.operator_id) else {
+        return Err(ApiError::BadRequest { detail: "Invalid operator id".to_string() });
+    };
+
+    let operator_id = OperatorId::from(uuid);
+
     let operator = state
         .operator_usecase
-        .get_operator(operator.operator_id.clone())
+        .get_operator(operator_id)
         .await
         .map_err(|e| {
             log::warn!("{e}");
@@ -75,10 +83,10 @@ pub async fn get_operator(
 #[post("/update_password")]
 pub async fn update_password(
     state: web::Data<AppState>,
-    auth_operator: web::ReqData<Operator>,
+    auth_operator: web::ReqData<OperatorModel>,
     request: web::Json<UpdatePasswordRequest>,
 ) -> Result<impl Responder, ApiError> {
-    let operator_id = auth_operator.operator_id.clone();
+    let operator_id = auth_operator.id.clone();
     let current_password = request.current_password.clone();
     let new_password = request.new_password.clone();
 
@@ -104,7 +112,11 @@ pub async fn toggle_operator_status(
     state: web::Data<AppState>,
     request: web::Json<ToggleOperatorStatusRequest>,
 ) -> Result<impl Responder, ApiError> {
-    let operator_id = request.operator_id.clone();
+    let Ok(uuid) = Uuid::try_parse(&request.operator_id) else {
+        return Err(ApiError::BadRequest { detail: "Invalid operator id".to_string() });
+    };
+
+    let operator_id = OperatorId::from(uuid);
 
     state
         .operator_usecase

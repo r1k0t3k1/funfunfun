@@ -1,6 +1,4 @@
-use std::net::SocketAddr;
-
-use application::{domain::model::{id::ListenerId, listener_model::{ListenerModel, ListenerProtocol}}, outbound::{error::C2Error, listener::ListenerControllerPort}};
+use application::{domain::model::{id::ListenerId, listener_model::ListenerModel}, outbound::{error::C2Error, listener::ListenerControllerPort}};
 use crate::actor::c2_manager_actor::C2ManagerHandle;
 
 pub struct ListenerAdapter {
@@ -23,9 +21,9 @@ impl ListenerControllerPort for ListenerAdapter {
             .map_err(|e| C2Error::Unexpected(e))
     }
 
-    async fn add(&self, name: String,addr: SocketAddr,protocol: ListenerProtocol) -> Result<ListenerModel, C2Error> {
+    async fn add(&self, listener: ListenerModel) -> Result<ListenerModel, C2Error> {
         self.c2_manager_handle
-            .add_listener(name, addr, protocol)
+            .add_listener(listener)
             .await
             .map_err(|e| C2Error::Unexpected(e))
     }

@@ -1,4 +1,4 @@
-use application::domain::model::operator_model::Operator;
+use application::domain::model::operator_model::OperatorModel;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams,ToSchema};
 
@@ -28,10 +28,10 @@ pub struct OperatorResponse {
     pub is_enabled: bool,
 }
 
-impl From<Operator> for OperatorResponse {
-    fn from(value: Operator) -> Self {
+impl From<OperatorModel> for OperatorResponse {
+    fn from(value: OperatorModel) -> Self {
         Self {
-            id: value.operator_id,
+            id: value.id.to_string(),
             name: value.name,
             description: value.description.unwrap_or("".to_string()),
             role: value.role.to_string(),

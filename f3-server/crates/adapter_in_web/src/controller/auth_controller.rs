@@ -4,6 +4,8 @@ use crate::state::AppState;
 use crate::error::ApiError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, Responder, post, web};
+use application::domain::model::id::SessionId;
+use uuid::Uuid;
 
 #[utoipa::path(
     context_path = "/auth",
@@ -19,11 +21,11 @@ pub async fn login(
 ) -> Result<impl Responder, ApiError> {
     let session = state
         .auth_usecase
-        .authenticate_operator(cred.operator_id.clone(), cred.password.clone())
+        .authenticate_operator(&cred.operator_name, &cred.password)
         .await?;
 
     Ok(ResponseBody::ok(StatusCode::OK, AuthenticatedResponse {
-        access_token: session.session_id,
+        access_token: session.id.to_string(),
     }))
 }
 
@@ -42,10 +44,17 @@ pub async fn logout(
         return Ok(ResponseBody::ok(StatusCode::OK, ())); // セッションなくてもとりあえずOK返す
     };
 
+    // パース失敗してもとりあえずOK返す
+    let Ok(uuid) = Uuid::try_parse(&session_id.value()) else {
+        return Ok(ResponseBody::ok(StatusCode::OK, ()));
+    };
+
+    let session_id = SessionId::from(uuid);
+
     // ログアウト失敗してもとりあえずOK返す
     let _ = state
         .auth_usecase
-        .logout(session_id.value().to_string())
+        .logout(session_id)
         .await;
 
     Ok(ResponseBody::ok(StatusCode::OK, ()))

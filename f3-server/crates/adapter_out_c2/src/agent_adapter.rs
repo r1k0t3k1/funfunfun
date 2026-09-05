@@ -23,8 +23,9 @@ impl AgentControllerPort for AgentAdapter {
 
     async fn find_by_id(&self, agent_id: AgentId) -> Result<AgentModel,C2Error> {
         self.c2_manager_handle
-            .get_agent(agent_id)
+            .get_agent(agent_id.clone())
             .await
-            .map_err(|e| C2Error::Unexpected(e))
+            .map_err(|e| C2Error::Unexpected(e))?
+            .ok_or(C2Error::NotFound { id: agent_id.to_string() })
     }
 }
