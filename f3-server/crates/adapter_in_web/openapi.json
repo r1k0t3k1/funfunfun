@@ -41,6 +41,16 @@
           "crate::controller::agent_controller"
         ],
         "operationId": "get_agent",
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Agent",
@@ -69,6 +79,16 @@
           "crate::controller::agent_controller"
         ],
         "operationId": "list_agents",
+        "parameters": [
+          {
+            "name": "listener_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Listenerが管理するAgentの一覧",
@@ -400,34 +420,52 @@
         "required": [
           "id",
           "listener_id",
-          "status",
-          "session_pubkey",
-          "shared_secret"
+          "process_id",
+          "thread_id",
+          "arch",
+          "is_admin",
+          "process_name",
+          "os",
+          "domain_name",
+          "computer_name",
+          "user_name"
         ],
         "properties": {
+          "arch": {
+            "type": "string"
+          },
+          "computer_name": {
+            "type": "string"
+          },
+          "domain_name": {
+            "type": "string"
+          },
           "id": {
             "type": "string"
+          },
+          "is_admin": {
+            "type": "boolean"
           },
           "listener_id": {
             "type": "string"
           },
-          "session_pubkey": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 0
-            }
+          "os": {
+            "type": "string"
           },
-          "shared_secret": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 0
-            }
+          "process_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
           },
-          "status": {
+          "process_name": {
+            "type": "string"
+          },
+          "thread_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "user_name": {
             "type": "string"
           }
         }
@@ -435,11 +473,11 @@
       "AuthenticateRequest": {
         "type": "object",
         "required": [
-          "operator_id",
+          "operator_name",
           "password"
         ],
         "properties": {
-          "operator_id": {
+          "operator_name": {
             "type": "string"
           },
           "password": {
@@ -453,9 +491,12 @@
           "name",
           "lhost",
           "lport",
-          "protocol"
+          "config"
         ],
         "properties": {
+          "config": {
+            "$ref": "#/components/schemas/ListenerConfigRequest"
+          },
           "lhost": {
             "type": "string"
           },
@@ -466,42 +507,169 @@
           },
           "name": {
             "type": "string"
-          },
-          "protocol": {
-            "$ref": "#/components/schemas/ListenerType"
           }
         }
+      },
+      "ListenerConfigRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "path",
+              "user_agent",
+              "host_header",
+              "http_method",
+              "is_ssl",
+              "protocol"
+            ],
+            "properties": {
+              "host_header": {
+                "type": "string"
+              },
+              "http_method": {
+                "type": "string"
+              },
+              "is_ssl": {
+                "type": "boolean"
+              },
+              "path": {
+                "type": "string"
+              },
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Http"
+                ]
+              },
+              "user_agent": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "protocol"
+            ],
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Tcp"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "protocol"
+            ],
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Dns"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "ListenerConfigResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "path",
+              "user_agent",
+              "host_header",
+              "http_method",
+              "is_ssl",
+              "protocol"
+            ],
+            "properties": {
+              "host_header": {
+                "type": "string"
+              },
+              "http_method": {
+                "type": "string"
+              },
+              "is_ssl": {
+                "type": "boolean"
+              },
+              "path": {
+                "type": "string"
+              },
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Http"
+                ]
+              },
+              "user_agent": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "protocol"
+            ],
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Tcp"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "protocol"
+            ],
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Dns"
+                ]
+              }
+            }
+          }
+        ]
       },
       "ListenerResponse": {
         "type": "object",
         "required": [
           "id",
           "name",
-          "addr",
-          "protocol"
+          "lhost",
+          "lport",
+          "config"
         ],
         "properties": {
-          "addr": {
-            "type": "string"
+          "config": {
+            "$ref": "#/components/schemas/ListenerConfigResponse"
           },
           "id": {
             "type": "string"
           },
-          "name": {
+          "lhost": {
             "type": "string"
           },
-          "protocol": {
+          "lport": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "name": {
             "type": "string"
           }
         }
-      },
-      "ListenerType": {
-        "type": "string",
-        "enum": [
-          "TCP",
-          "HTTP",
-          "HTTPS"
-        ]
       },
       "RemoveListenerRequest": {
         "type": "object",
