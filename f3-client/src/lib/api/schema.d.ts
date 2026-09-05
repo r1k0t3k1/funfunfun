@@ -235,12 +235,20 @@ export interface components {
         AgentResponse: {
             id: string;
             listener_id: string;
-            session_pubkey: number[];
-            shared_secret: number[];
-            status: string;
+            /** Format: int64 */
+            process_id: number;
+            /** Format: int64 */
+            thread_id: number;
+            arch: string;
+            is_admin: boolean;
+            process_name: string;
+            os: string;
+            domain_name: string;
+            computer_name: string;
+            user_name: string;
         };
         AuthenticateRequest: {
-            operator_id: string;
+            operator_name: string;
             password: string;
         };
         CreateListenerRequest: {
@@ -248,16 +256,31 @@ export interface components {
             /** Format: int32 */
             lport: number;
             name: string;
-            protocol: components["schemas"]["ListenerType"];
+            config: components["schemas"]["ListenerConfig"];
         };
         ListenerResponse: {
-            addr: string;
             id: string;
             name: string;
-            protocol: string;
+            lhost: string;
+            /** Format: int32 */
+            lport: number;
+            config: components["schemas"]["ListenerConfig"];
         };
-        /** @enum {string} */
-        ListenerType: "TCP" | "HTTP" | "HTTPS";
+        ListenerConfig: {
+            /** @enum {string} */
+            protocol: "Http";
+            path: string;
+            user_agent: string;
+            host_header: string;
+            http_method: string;
+            is_ssl: boolean;
+        } | {
+            /** @enum {string} */
+            protocol: "Tcp";
+        } | {
+            /** @enum {string} */
+            protocol: "Dns";
+        };
         RemoveListenerRequest: {
             listener_id: string;
         };

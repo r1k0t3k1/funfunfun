@@ -2,7 +2,7 @@
   import Logo from "$lib/ui/Logo.svelte";
   import { login } from "$lib/stores/auth";
 
-  let operatorId = $state("");
+  let operatorName = $state("");
   let password = $state("");
   let errorMessage = $state("");
   let submitting = $state(false);
@@ -12,7 +12,7 @@
     errorMessage = "";
     submitting = true;
     try {
-      await login({ operator_id: operatorId, password });
+      await login({ operator_name: operatorName, password });
     } catch (e) {
       errorMessage = e instanceof Error ? e.message : "ログインに失敗しました";
     } finally {
@@ -40,13 +40,13 @@
 
     <form onsubmit={handleSubmit}>
       <label class="field">
-        <span class="field-label">オペレータ ID</span>
+        <span class="field-label">オペレータ名</span>
         <input
           class="input"
           type="text"
-          placeholder="operator_id"
+          placeholder="operator_name"
           autocomplete="username"
-          bind:value={operatorId}
+          bind:value={operatorName}
           required
         />
       </label>

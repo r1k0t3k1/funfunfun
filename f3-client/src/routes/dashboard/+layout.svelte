@@ -19,6 +19,7 @@
   // 左サイドバーのナビゲーション項目。
   const navItems = [
     { href: "/dashboard/listeners", label: "Listener", icon: "network" },
+    { href: "/dashboard/agents", label: "Agent", icon: "agent" },
     { href: "/dashboard/operators", label: "Operator", icon: "users" },
   ] as const;
 

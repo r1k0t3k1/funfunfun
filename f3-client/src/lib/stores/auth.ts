@@ -28,7 +28,7 @@ export async function login(credential: AuthenticateRequest): Promise<void> {
     body: credential,
   });
   if (error !== undefined || !response.ok) {
-    throw new Error("オペレータ ID またはパスワードが正しくありません");
+    throw new Error("オペレータ名またはパスワードが正しくありません");
   }
 
   // レスポンスは封筒 `{ result, status_code, data: { access_token } }`。

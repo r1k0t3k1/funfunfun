@@ -107,7 +107,20 @@ export type RemoveListenerRequest =
 export type StartListenerRequest =
   components["schemas"]["StartListenerRequest"];
 export type StopListenerRequest = components["schemas"]["StopListenerRequest"];
-export type ListenerType = components["schemas"]["ListenerType"];
+
+/**
+ * Listener の設定（protocol で判別されるタグ付きユニオン）。
+ * サーバの `ListenerConfig`（Http / Tcp / Dns）に対応する。
+ */
+export type ListenerConfig = components["schemas"]["ListenerConfig"];
+
+/**
+ * 作成フォームで選べる Listener 種別（UI 用の概念）。
+ * サーバ側は `config.protocol`（Http/Tcp/Dns）＋ `is_ssl` で表現するため、
+ * ここでは従来の UI ラベル（TCP/HTTP/HTTPS）を保持し、送信時に config へ変換する。
+ */
+export type ListenerType = "TCP" | "HTTP" | "HTTPS";
+
 // /operator/toggle_status のリクエスト型（operator_id のみ）。
 export type ToggleOperatorStatusRequest =
   components["schemas"]["ToggleOperatorStatusRequest"];
@@ -131,10 +144,13 @@ export type ListenerListItem = components["schemas"]["ListenerResponse"];
 
 /**
  * /agent/list・/agent/get のレスポンス要素。
- * openapi.json に `AgentResponse` スキーマが追加されたため、生成型を利用する。
+ * openapi.json 追従: Agent 実装完了に伴い `AgentResponse` は端末情報
+ * （プロセス / OS / ユーザ等）を持つ形へ変更された。
  * （レスポンスは `AgentResponse[]` / `AgentResponse` を封筒に包んで返る）
- *   - status: サーバ側 enum を `{:?}` で文字列化したもの（例: "Alive" / "Dead"）
- *   - session_pubkey / shared_secret: 32 バイト鍵を数値配列で表現したもの
+ *   - process_id / thread_id: Agent が動作するプロセス / スレッド ID
+ *   - arch / os: アーキテクチャ・OS 情報
+ *   - is_admin: 管理者権限で動作しているか
+ *   - domain_name / computer_name / user_name: 端末・実行ユーザ情報
  */
 export type AgentListItem = components["schemas"]["AgentResponse"];
 

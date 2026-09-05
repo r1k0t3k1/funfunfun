@@ -4,6 +4,7 @@
   // 親の文字色に追従する。
   type IconName =
     | "network"
+    | "agent"
     | "users"
     | "plus"
     | "refresh"
@@ -19,6 +20,8 @@
   const paths: Record<IconName, string> = {
     network:
       '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4M17.5 10v4M6.5 14h11"/>',
+    agent:
+      '<rect x="5" y="8" width="14" height="11" rx="2"/><path d="M12 8V4M9 4h6"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="13" r="1"/><path d="M9 16h6"/>',
     users:
       '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
