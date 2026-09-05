@@ -49,7 +49,7 @@ impl C2ManagerActor {
     async fn handle_message(&mut self, msg: C2Message) {
         match msg {
             C2Message::AddListener { listener, reply } => {
-                let listener_id = ListenerId::new();
+                let listener_id = listener.id.clone();
                 let listener_handle = ListenerHandle::new(listener.clone(), self.sender.clone());
                 self.listener_handles.insert(listener_id, listener_handle);
                 let _ = reply.send(Ok(listener));
