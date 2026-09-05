@@ -56,26 +56,20 @@ impl ListenerRepository for ListenerRepositoryImpl {
     ) -> Result<ListenerModel, RepositoryError> {
         let row = sqlx::query_as!(
             ListenerEntity,
-            r#"INSERT INTO listeners (name, lhost, lport, config)
+            r#"INSERT INTO listeners (name, lhost, lport, config, is_running)
                VALUES (
                     $1,
                     $2,
                     $3,
-                    $4
-               ) RETURNING 
-                id,
-                name,
-                lhost,
-                lport, 
-                is_running,
-                checkin_key,
-                config,
-                created_at
+                    $4,
+                    $5
+               ) RETURNING *;
             "#,
             name,
             lhost,
             lport as i32,
             serde_json::to_string(&Into::<ListenerConfigEntity>::into(config)).unwrap(),
+            false,
         )
         .fetch_one(&self.connection)
         .await
