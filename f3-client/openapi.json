@@ -431,10 +431,25 @@
           "user_name"
         ],
         "properties": {
+          "arch": {
+            "type": "string"
+          },
+          "computer_name": {
+            "type": "string"
+          },
+          "domain_name": {
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
+          "is_admin": {
+            "type": "boolean"
+          },
           "listener_id": {
+            "type": "string"
+          },
+          "os": {
             "type": "string"
           },
           "process_id": {
@@ -442,28 +457,13 @@
             "format": "int64",
             "minimum": 0
           },
+          "process_name": {
+            "type": "string"
+          },
           "thread_id": {
             "type": "integer",
             "format": "int64",
             "minimum": 0
-          },
-          "arch": {
-            "type": "string"
-          },
-          "is_admin": {
-            "type": "boolean"
-          },
-          "process_name": {
-            "type": "string"
-          },
-          "os": {
-            "type": "string"
-          },
-          "domain_name": {
-            "type": "string"
-          },
-          "computer_name": {
-            "type": "string"
           },
           "user_name": {
             "type": "string"
@@ -494,6 +494,9 @@
           "config"
         ],
         "properties": {
+          "config": {
+            "$ref": "#/components/schemas/ListenerConfigRequest"
+          },
           "lhost": {
             "type": "string"
           },
@@ -504,66 +507,22 @@
           },
           "name": {
             "type": "string"
-          },
-          "config": {
-            "$ref": "#/components/schemas/ListenerConfig"
           }
         }
       },
-      "ListenerResponse": {
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "lhost",
-          "lport",
-          "config"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "lhost": {
-            "type": "string"
-          },
-          "lport": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
-          },
-          "config": {
-            "$ref": "#/components/schemas/ListenerConfig"
-          }
-        }
-      },
-      "ListenerConfig": {
+      "ListenerConfigRequest": {
         "oneOf": [
           {
             "type": "object",
             "required": [
-              "protocol",
               "path",
               "user_agent",
               "host_header",
               "http_method",
-              "is_ssl"
+              "is_ssl",
+              "protocol"
             ],
             "properties": {
-              "protocol": {
-                "type": "string",
-                "enum": [
-                  "Http"
-                ]
-              },
-              "path": {
-                "type": "string"
-              },
-              "user_agent": {
-                "type": "string"
-              },
               "host_header": {
                 "type": "string"
               },
@@ -572,6 +531,18 @@
               },
               "is_ssl": {
                 "type": "boolean"
+              },
+              "path": {
+                "type": "string"
+              },
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Http"
+                ]
+              },
+              "user_agent": {
+                "type": "string"
               }
             }
           },
@@ -603,9 +574,101 @@
               }
             }
           }
+        ]
+      },
+      "ListenerConfigResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "path",
+              "user_agent",
+              "host_header",
+              "http_method",
+              "is_ssl",
+              "protocol"
+            ],
+            "properties": {
+              "host_header": {
+                "type": "string"
+              },
+              "http_method": {
+                "type": "string"
+              },
+              "is_ssl": {
+                "type": "boolean"
+              },
+              "path": {
+                "type": "string"
+              },
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Http"
+                ]
+              },
+              "user_agent": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "protocol"
+            ],
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Tcp"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "protocol"
+            ],
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Dns"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "ListenerResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "lhost",
+          "lport",
+          "config"
         ],
-        "discriminator": {
-          "propertyName": "protocol"
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/ListenerConfigResponse"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lhost": {
+            "type": "string"
+          },
+          "lport": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string"
+          }
         }
       },
       "RemoveListenerRequest": {
