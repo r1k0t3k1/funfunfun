@@ -58,6 +58,7 @@ pub struct ListenerResponse {
     pub name: String,
     pub lhost: String,
     pub lport: u16,
+    pub is_running: bool,
     pub config: ListenerConfigResponse,  
 }
 
@@ -94,6 +95,7 @@ impl From<ListenerModel> for ListenerResponse {
             name: value.name,
             lhost: value.lhost,
             lport: value.lport,
+            is_running: value.is_running,
             config: value.config.into(),
         }
     }
