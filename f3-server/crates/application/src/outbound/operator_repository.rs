@@ -6,6 +6,7 @@ use crate::{
 #[async_trait::async_trait]
 pub trait OperatorRepository: Send + Sync {
     async fn find_by_id(&self, operator_id: OperatorId) -> Result<Option<OperatorModel>, RepositoryError>;
+    async fn find_by_name(&self, operator_name: &String) -> Result<Option<OperatorModel>, RepositoryError>;
     async fn list(&self) -> Result<Vec<OperatorModel>, RepositoryError>;
     async fn insert(
         &self,

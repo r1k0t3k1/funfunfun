@@ -167,10 +167,6 @@ async fn dispatch(body: web::Bytes, sender: web::Data<UnboundedSender<C2Message>
        .map_err(|e| {
            log::warn!("{e}");
            ErrorInternalServerError("")
-       })?
-       .map_err(|e| {
-           log::warn!("{e}");
-           ErrorInternalServerError("")
        })?;
     
     let payload = Payload::new(MessageBody::Command { 

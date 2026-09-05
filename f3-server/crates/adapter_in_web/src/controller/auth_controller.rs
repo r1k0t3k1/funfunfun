@@ -4,7 +4,7 @@ use crate::state::AppState;
 use crate::error::ApiError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, Responder, post, web};
-use application::domain::model::id::{OperatorId, SessionId};
+use application::domain::model::id::SessionId;
 use uuid::Uuid;
 
 #[utoipa::path(
@@ -19,16 +19,9 @@ pub async fn login(
     state: web::Data<AppState>,
     cred: web::Json<AuthenticateRequest>,
 ) -> Result<impl Responder, ApiError> {
-    let uuid = Uuid::try_parse(&cred.operator_id)
-        .map_err(|e| {
-            log::warn!("{e}");
-            ApiError::BadRequest { detail: "Invalid operator id".to_string() }
-        })?;
-
-    let operator_id = OperatorId::from(uuid);
     let session = state
         .auth_usecase
-        .authenticate_operator(operator_id, cred.password.clone())
+        .authenticate_operator(&cred.operator_name, &cred.password)
         .await?;
 
     Ok(ResponseBody::ok(StatusCode::OK, AuthenticatedResponse {

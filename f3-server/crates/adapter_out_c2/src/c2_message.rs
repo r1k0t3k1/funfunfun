@@ -49,5 +49,5 @@ pub enum ListenerMessage {
 }
 
 pub enum AgentMessage {
-    LookupSharedSecret { reply: oneshot::Sender<anyhow::Result<[u8; 32]>>}
+    LookupSharedSecret { reply: oneshot::Sender<[u8; 32]>}
 }

@@ -33,7 +33,7 @@ VALUES
 CREATE TABLE IF NOT EXISTS operators (
 	id uuid DEFAULT uuidv7() PRIMARY KEY,
   password_hash TEXT NOT NULL,
-  name TEXT NOT NULL,
+  name TEXT NOT NULL UNIQUE,
   description VARCHAR(1024), 
   role VARCHAR(20) NOT NULL REFERENCES roles(name),
   is_enabled BOOLEAN NOT NULL DEFAULT FALSE,

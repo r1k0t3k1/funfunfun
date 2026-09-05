@@ -44,7 +44,7 @@ impl SessionRepository for SessionRepositoryImpl {
     async fn insert(&self, operator_id: OperatorId) -> Result<SessionModel, RepositoryError> {
         sqlx::query_as!(
             SessionEntity,
-            r#"INSERT INTO sessions (id) 
+            r#"INSERT INTO sessions (operator_id) 
                VALUES ($1) RETURNING *; 
             "#,
             Into::<Uuid>::into(operator_id),

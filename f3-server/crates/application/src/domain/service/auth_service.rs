@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     domain::model::{
-        id::{OperatorId, SessionId}, operator_model::OperatorModel, password_model::{HashedPassword, RawPassword}, session_model::SessionModel
+        id::SessionId, operator_model::OperatorModel, password_model::{HashedPassword, RawPassword}, session_model::SessionModel
     },
     inbound::{auth_usecase::AuthUsecase, error::AuthUsecaseError},
     outbound::{
@@ -38,12 +38,12 @@ impl AuthService {
 impl AuthUsecase for AuthService {
     async fn authenticate_operator(
         &self,
-        operator_id: OperatorId,
-        password: String,
+        operator_name: &String,
+        password: &String,
     ) -> Result<SessionModel, AuthUsecaseError> {
         let operator = self
             .operator_repository
-            .find_by_id(operator_id)
+            .find_by_name(operator_name)
             .await
             .map_err(|e| {
                 log::error!("{e}");
@@ -52,7 +52,7 @@ impl AuthUsecase for AuthService {
                     _ => AuthUsecaseError::Unexpected(e.into()),
                 }
             })?;
-
+        
         // レスポンスタイムによるユーザ列挙を防ぐ
         let Some(operator) = operator else {
             let _ = self.password_hasher.hash(&RawPassword::new("dummydummy".to_string()).unwrap());
@@ -64,9 +64,10 @@ impl AuthUsecase for AuthService {
             return Err(AuthUsecaseError::AuthenticationFailed);
         }
         
-        let raw_password = RawPassword::new(password)
+        let raw_password = RawPassword::new(password.clone())
             .map_err(|_| AuthUsecaseError::AuthenticationFailed)?;
-
+    
+        
         let password_match = self.password_hasher.verify(&raw_password, &HashedPassword::from_phc_string(operator.password_hash));
 
         if password_match == false {

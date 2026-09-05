@@ -47,6 +47,30 @@ impl OperatorRepository for OperatorRepositoryImpl {
         .map_err(|e| RepositoryError::Infrastructure(e.into()))
     }
 
+    async fn find_by_name(&self, operator_name: &String) -> Result<Option<OperatorModel>, RepositoryError> {
+        sqlx::query_as!(
+            OperatorEntity,
+            r#"SELECT 
+                  id,
+                  name,
+                  password_hash,
+                  description,
+                  created_at,
+                  updated_at,
+                  role AS "role: RoleEntity",
+                  is_enabled,
+                  version
+              FROM operators
+              WHERE name = $1
+            "#,
+            operator_name,
+        )
+        .fetch_optional(&self.connection)
+        .await
+        .map(|ooe| ooe.map(|oe| oe.into()))
+        .map_err(|e| RepositoryError::Infrastructure(e.into()))
+    }
+
     async fn list(&self) -> Result<Vec<OperatorModel>, RepositoryError> {
         sqlx::query_as!(
             OperatorEntity,

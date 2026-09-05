@@ -28,9 +28,9 @@ impl AgentActor {
 
     async fn handle_message(&mut self, msg: AgentMessage) {
         match msg {
-            AgentMessage::CheckinComplete => {
-                log::info!("Agent checkin {}", self.agent.id);
-            }
+            AgentMessage::LookupSharedSecret { reply } => {
+                let _ = reply.send(self.agent.shared_secret);
+            },
         }
     }
 }
